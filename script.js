@@ -23,14 +23,28 @@ const timeStep = 100;
 let time = 0;
 const protocol = [{ time: time, move: "", step: 0, event: "start game" }];
 
+// const setEvent = (newEvent) => {
+//   const lastMove = protocol[protocol.length - 1];
+//   const newRecord = { ...lastMove, time: time, event: newEvent };
+//   if (lastMove.event !== "start game") {
+//     protocol[protocol.length - 1] = newRecord;
+//     if (newEvent !== "game over" && !newEvent.includes("new"))
+//       protocol.push(newRecord);
+//   } else protocol.unshift(newRecord);
+// };
+
 const setEvent = (newEvent) => {
   const lastMove = protocol[protocol.length - 1];
-  const newRecord = { ...lastMove, time: time, event: newEvent };
-  if (lastMove.event !== "start game") {
-    protocol[protocol.length - 1] = newRecord;
-    if (newEvent !== "game over" && !newEvent.includes("new"))
-      protocol.push(newRecord);
-  } else protocol.unshift(newRecord);
+  if (lastMove.event === "bonus eaten" && newEvent === "bonus eaten") {
+    lastMove.time = time;
+  } else {
+    const newRecord = { ...lastMove, time: time, event: newEvent };
+    if (lastMove.event !== "start game") {
+      protocol[protocol.length - 1] = newRecord;
+      if (newEvent !== "game over" && !newEvent.includes("new"))
+        protocol.push(newRecord);
+    } else protocol.unshift(newRecord);
+  }
 };
 
 const changeFoodPosition = () => {
@@ -102,12 +116,15 @@ const initGame = (timeStep) => {
       highScoreElement.innerHTML = `High Score: ${highScore}`;
       break;
     case "bonus eaten":
-      isBonus = false;
-      score += 10;
-      highScore = score >= highScore ? score : highScore;
-      localStorage.setItem("high-score", highScore);
-      scoreElement.innerHTML = `Score: ${score}`;
-      highScoreElement.innerHTML = `High Score: ${highScore}`;
+      if (isBonus) {
+        isBonus = false;
+        score += 10;
+        scoreElement.innerHTML = `Score: ${score}`;
+        highScore = score >= highScore ? score : highScore;
+        localStorage.setItem("high-score", highScore);
+        highScoreElement.innerHTML = `High Score: ${highScore}`;
+      }
+      console.log(score);
       break;
     case "game over":
       clearInterval(setIntervalId);
@@ -150,8 +167,8 @@ changeFoodPosition();
 setObstaclePosition();
 setBonusPosition();
 initGame();
-// setIntervalId = setInterval(() => {
-//   initGame(timeStep);
-//   time = time + timeStep;
-// }, timeStep);
+setIntervalId = setInterval(() => {
+  initGame(timeStep);
+  time = time + timeStep;
+}, timeStep);
 document.addEventListener("keydown", changeDirection);
