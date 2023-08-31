@@ -1,8 +1,9 @@
 const playBoard = document.querySelector(".play-board");
 const scoreElement = document.querySelector(".score");
-const highScoreElement = document.querySelector(".high-score");
+const leftToEatElement = document.querySelector(".left-to-eat");
 const timeElement = document.querySelector(".time");
-const snakeLivesElement = document.querySelector(".snakeLives");
+const snakeLivesElement = document.querySelector(".lives");
+const levelElement = document.querySelector(".level");
 const controls = document.querySelectorAll(".controls i");
 
 function millisecondsToMinutesAndSeconds(milliseconds) {
@@ -10,20 +11,50 @@ function millisecondsToMinutesAndSeconds(milliseconds) {
   var seconds = ((milliseconds % 60000) / 1000).toFixed(0);
   return minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
 }
+const levels = [
+  {
+    field: 15,
+    time: 15000, // 00:15
+    snakeLives: 2,
+    timeStep: 250,
+    food: 2,
+    obstacles: [],
+    bonuses: [],
+    maxScores: 2,
+  },
+  {
+    field: 30,
+    time: 45000,
+    snakeLives: 3,
+    timeStep: 125,
+    food: 9,
+    obstacles: ["fix", "fix"],
+    bonuses: [
+      { type: "points", value: 10, startFood: 3 },
+      { type: "points", value: 20, startFood: 6 },
+    ],
+    maxScores: 39,
+  },
+];
+const maxLevel = levels.length;
 let level = 1;
-const field = 30;
-let htmlMarkup = "";
+let field;
+let foodLevel;
+let currentFood;
+let isLevelComplete = false;
 let screen = "";
 let foodX;
 let foodY;
+const obstacles = [];
 let obstacleX;
 let obstacleY;
 let bonusX;
 let bonusY;
-let isBonus;
-let snakeLives = 3;
-let isEvent = false;
-let move = "";
+let isBonus = false;
+let isBonusEaten = false;
+let isBonusShow = false;
+let currentBonus;
+let leftToEat;
 let stepX = 0;
 let stepY = 0;
 let snakeX = 5;
@@ -32,13 +63,13 @@ let snakeBody = [[snakeX, snakeY]];
 let setIntervalId;
 let score = 0;
 const foodPoints = 1;
-const bonusPoints = 10;
-let highScore = localStorage.getItem("high-score") || 0;
-let levelTime = 30000;
+let maxScores;
+let levelTime;
 let isTime = false;
-const timeStep = 125;
+let timeStep;
 let time = 0;
-const protocol = [{ time: time, event: "start game", value: level }];
+let snakeLives;
+const protocol = [];
 
 const setEvent = (newEvent, newValue) => {
   const newRecord = { time: time, event: newEvent, value: newValue };
@@ -63,21 +94,71 @@ const getFreeCell = (bookedCells) => {
   return [freeCellX, freeCellY];
 };
 
+const setLevel = () => {
+  protocol.push({ time: time, event: "start game", value: level });
+  field = levels[level - 1].field;
+  foodLevel = levels[level - 1].food;
+  levelTime = levels[level - 1].time;
+  timeStep = levels[level - 1].timeStep;
+  maxScores = levels[level - 1].maxScores;
+  snakeLives = levels[level - 1].snakeLives;
+  console.log(snakeLives);
+};
+
+const counter = () => {
+  // проверка генерации еды
+  currentFood = protocol.filter(
+    (notice) => notice.event === "food eaten"
+  ).length;
+  leftToEat = foodLevel - currentFood;
+  if (leftToEat === 0) {
+    setEvent("level is complete", level);
+    isLevelComplete = true;
+  }
+  // проверка генерации бонусов
+  if (levels[level - 1].bonuses.length !== 0) {
+    let bonusesList = levels[level - 1].bonuses.map((bonus) => bonus.startFood);
+    bonusesList = bonusesList.map((li) => {
+      return { start: li, end: li + 2 };
+    });
+    for (let i = 0; i < bonusesList.length; i++) {
+      if (currentFood === bonusesList[i].start && !isBonusShow) {
+        isBonus = true;
+        isBonusShow = true;
+        currentBonus = i;
+        setBonusPosition();
+      }
+      if (currentFood === bonusesList[i].end) {
+        if (isBonusShow && !isBonusEaten)
+          setEvent("bonus is deleted", currentBonus + 1);
+        isBonus = false;
+        isBonusEaten = false;
+        isBonusShow = false;
+      }
+    }
+  }
+};
+
 const setFoodPosition = () => {
-  [foodX, foodY] = getFreeCell(snakeBody.concat([obstacleX, obstacleY]));
-  setEvent("set food", foodX + ":" + foodY);
+  if (currentFood !== foodLevel - 1) {
+    [foodX, foodY] = getFreeCell(snakeBody.concat(obstacles));
+    setEvent("set food", foodX + ":" + foodY);
+  }
 };
 
 const setObstaclePosition = () => {
-  [obstacleX, obstacleY] = getFreeCell(snakeBody);
-  setEvent("set fix obstacle", obstacleX + ":" + obstacleY);
+  let booking = [];
+  booking.push(snakeBody);
+  for (let i = 0; i < levels[level - 1].obstacles.length; i++) {
+    [obstacleX, obstacleY] = getFreeCell(booking);
+    obstacles.push({ X: obstacleX, Y: obstacleY });
+    setEvent("set fix obstacle", obstacleX + ":" + obstacleY);
+    booking.push([obstacleX, obstacleY]);
+  }
 };
 
 const setBonusPosition = () => {
-  isBonus = true;
-  [bonusX, bonusY] = getFreeCell(
-    snakeBody.concat([obstacleX, obstacleY], [foodX, foodY])
-  );
+  [bonusX, bonusY] = getFreeCell(snakeBody.concat(obstacles, [foodX, foodY]));
   setEvent("set point bonus", bonusX + ":" + bonusY);
 };
 
@@ -116,6 +197,7 @@ const timer = () => {
     с учетом всех текущих изменений
   */
 const render = () => {
+  playBoard.style.gridTemplate = `repeat(${field}, 1fr) / repeat(${field}, 1fr)`;
   // первой создается голова змейки
   screen = `<div class="head" style="grid-area: ${snakeBody[0][1]} / ${snakeBody[0][0]}"></div>`;
   // к ней добавляется остальная часть, если она есть
@@ -124,20 +206,22 @@ const render = () => {
   // второй создается еда
   screen += `<div class="food" style="grid-area: ${foodY} / ${foodX}"></div>`;
   // третьим создается препятствие
-  screen += `<div class="obstacle" style="grid-area: ${obstacleY} / ${obstacleX}"></div>`;
+  for (let i = 0; i < obstacles.length; i++)
+    screen += `<div class="obstacle" style="grid-area: ${obstacles[i].Y} / ${obstacles[i].X}"></div>`;
   // четвертым создается бонус, если он есть
-  if (isBonus)
+  if (isBonus && !isBonusEaten)
     screen += `<div class="bonus" style="grid-area: ${bonusY} / ${bonusX}"></div>`;
   // после  игрового поля создается табло
   scoreElement.innerHTML = `Score: ${score}`; // текущие очки
-  highScoreElement.innerHTML = `High Score: ${highScore}`; // максимальный результат
+  leftToEatElement.innerHTML = `LeftToEat: ${leftToEat}`; // максимально возможный результат
   // остаток времени до окончания уровня
   timeElement.innerHTML = `Time: ${millisecondsToMinutesAndSeconds(
     levelTime - time < 0 ? 0 : levelTime - time
   )}`;
-  snakeLivesElement.innerHTML = `Live: ${snakeLives}`;
+  levelElement.innerHTML = `Level: ${level}`; // текущий уровень
   // вывод созданного изображения на экран
-  playBoard.innerHTML = screen;
+  playBoard.innerHTML = !isLevelComplete ? screen : "";
+  snakeLivesElement.innerHTML = `Lives: ${snakeLives}`;
 };
 /*
   функция checkingRestrictions() проверяет, выполняются ли установленные игрой ограничения
@@ -145,31 +229,12 @@ const render = () => {
 const checkingRestrictions = () => {
   // проверка соприкосновения с препятствиями
   if (snakeX === obstacleX && snakeY === obstacleY) {
-    setEvent("game over", "obstacle contact");
-    snakeLives--; // Decrement lives when hitting an obstacle
-
-    if (snakeLives > 0) {
-      // Reset snake's position to initial coordinates
-      snakeX = 5;
-      snakeY = 10;
-    } else {
-      setEvent("game over", "out of lives"); // Trigger game over if out of lives
-      clearInterval(setIntervalId);
-      alert("Game over! Press OK to replay...");
-      localStorage.setItem("protocol", JSON.stringify(protocol));
-      location.reload();
-      return; // Exit the function to prevent further processing
-    }
+    // setEvent("game over", "obstacle contact");
+    setEvent("lost live", "obstacle contact");
   }
   // проверка соприкосновения с границами поля
   if (snakeX <= 0 || snakeX > field || snakeY <= 0 || snakeY > field) {
-    setEvent("game over", "border contact");
-    snakeLives--; // Decrement lives when hitting the wall
-    // Move these lines inside the "if" block to prevent early game over
-    if (snakeLives <= 0) {
-      setEvent("game over", "out of lives"); // Trigger game over if out of lives
-      return; // Exit the function to prevent further processing
-    }
+    setEvent("lost live", "border contact");
   }
   // проверка соприкосновения змейки с самой собой
   for (let i = 0; i < snakeBody.length; i++) {
@@ -179,7 +244,6 @@ const checkingRestrictions = () => {
       snakeBody[0][0] === snakeBody[i][0]
     ) {
       setEvent("game over", "contact with oneself");
-      snakeLives--;
     }
   }
   // проверка превышения лимита времени, отведенного на текущий уровень
@@ -193,11 +257,11 @@ const checkingRestrictions = () => {
 const checkingInteractions = () => {
   // проверка соприкосновения змейки с едой
   if (snakeX === foodX && snakeY === foodY) {
-    setEvent("food eaten", foodPoints);
+    setEvent("food eaten", currentFood + 1);
   }
   // проверка соприкосновения змейки с бонусом
   if (snakeX === bonusX && snakeY === bonusY && isBonus) {
-    setEvent("bonus eaten", bonusPoints);
+    setEvent("bonus eaten", levels[level - 1].bonuses[currentBonus].value);
   }
 };
 /*
@@ -222,33 +286,91 @@ const protocolExecutor = () => {
     case "food eaten":
       snakeBody.push([]);
       setFoodPosition();
-      score += value;
-      highScore = score >= highScore ? score : highScore;
-      localStorage.setItem("high-score", highScore);
+      score += foodPoints;
       break;
     case "bonus eaten":
-      if (isBonus) {
-        isBonus = false;
+      if (!isBonusEaten) {
+        isBonusEaten = true;
         score += value;
-        highScore = score >= highScore ? score : highScore;
-        localStorage.setItem("high-score", highScore);
       }
       break;
-
-    case "game over":
+    case "lost live":
+      snakeLives -= 1;
+      if (snakeLives <= 0) {
+        setEvent("game over", "no lives left");
+        break;
+      }
+      snakeX = 5;
+      snakeY = 10;
+      stepX = 0;
+      stepY = 0;
+      snakeBody = [[snakeX, snakeY]];
+      setFoodPosition();
+      // setObstaclePosition();
       clearInterval(setIntervalId);
-      if (value === "out of lives") {
-        alert("Out of lives! Press OK to replay...");
+      alert(`Oops! You lost a life. Lives left: ${snakeLives}`);
+      setIntervalId = setInterval(() => {
+        // перемещение змейки по игровому полю
+        moveSnake();
+        // проверка всех предусмотренных игрой ограничений
+        checkingRestrictions();
+        // проверка доступных игроку взаимодействий
+        checkingInteractions();
+        protocolExecutor();
+        counter();
+        // вывод текущего изображения игры
+        render();
+        // отсчет игрового времени
+        timer();
+        // Your existing game loop logic here...
+      }, timeStep);
+      break;
+
+    case "level is complete":
+      level++;
+      if (level > levels.length) {
+        clearInterval(setIntervalId);
+        alert("You WIN! Press OK to replay...");
         localStorage.setItem("protocol", JSON.stringify(protocol));
         location.reload();
-        return; // Exit the function to prevent the game from restarting immediately
-      } else {
-        alert("Game over! Press OK to replay...");
+        break;
       }
+      clearInterval(setIntervalId);
+      alert(
+        `Level ${
+          level - 1
+        } is complete! Congratulation! Well done! It's time to Level ${level}`
+      );
+      isLevelComplete = false;
+      snakeX = 5;
+      snakeY = 10;
+      stepX = 0;
+      stepY = 0;
+      snakeBody = [[snakeX, snakeY]];
+      setLevel();
+      setObstaclePosition();
+      setFoodPosition();
+      setIntervalId = setInterval(() => {
+        // перемещение змейки по игровому полю
+        moveSnake();
+        // проверка всех предусмотренных игрой ограничений
+        checkingRestrictions();
+        // проверка доступных игроку взаимодействий
+        checkingInteractions();
+        protocolExecutor();
+        counter();
+        // вывод текущего изображения игры
+        render();
+        // отсчет игрового времени
+        timer();
+      }, timeStep);
+      break;
+    case "game over":
+      clearInterval(setIntervalId);
+      alert("Game over! Press OK to replay...");
       localStorage.setItem("protocol", JSON.stringify(protocol));
       location.reload();
       break;
-
     case "X":
       stepX = value;
       stepY = 0;
@@ -261,9 +383,9 @@ const protocolExecutor = () => {
 };
 
 // игра
+setLevel();
 setObstaclePosition();
 setFoodPosition();
-setBonusPosition();
 setIntervalId = setInterval(() => {
   // перемещение змейки по игровому полю
   moveSnake();
@@ -272,9 +394,11 @@ setIntervalId = setInterval(() => {
   // проверка доступных игроку взаимодействий
   checkingInteractions();
   protocolExecutor();
+  counter();
   // вывод текущего изображения игры
   render();
   // отсчет игрового времени
   timer();
 }, timeStep);
+
 document.addEventListener("keydown", changeDirection);
