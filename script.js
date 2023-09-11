@@ -69,6 +69,7 @@ let isTime = false;
 let timeStep;
 let time = 0;
 let snakeLives;
+let liveScores = 3;
 const protocol = [];
 
 const setEvent = (newEvent, newValue) => {
@@ -243,7 +244,7 @@ const checkingRestrictions = () => {
       snakeBody[0][1] === snakeBody[i][1] &&
       snakeBody[0][0] === snakeBody[i][0]
     ) {
-      setEvent("game over", "contact with oneself");
+      setEvent("lost live", "contact with oneself");
     }
   }
   // проверка превышения лимита времени, отведенного на текущий уровень
@@ -306,7 +307,6 @@ const protocolExecutor = () => {
       stepY = 0;
       snakeBody = [[snakeX, snakeY]];
       setFoodPosition();
-      // setObstaclePosition();
       clearInterval(setIntervalId);
       alert(`Oops! You lost a life. Lives left: ${snakeLives}`);
       setIntervalId = setInterval(() => {
