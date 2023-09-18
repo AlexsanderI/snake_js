@@ -26,12 +26,15 @@ const levels = [
     field: 30,
     time: 35000,
     timeStep: 125,
-    food: 8,
+    food: 10,
     snakeLives: 3,
     obstacles: ["fix", "fix", "x", "y"],
     bonuses: [
-      { type: "points", value: 10, startFood: 1 },
-      { type: "lives", value: 20, startFood: 4 },
+      // { type: "time", value: 10000, startFood: 1 },
+      { type: "time", value: 20000, startFood: 1 },
+      // { type: "points", value: 10, startFood: 1 },
+      { type: "points", value: 10, startFood: 4 },
+      { type: "lives", value: 20, startFood: 7 },
     ],
     maxScores: 39,
   },
@@ -351,6 +354,9 @@ const protocolExecutor = () => {
             break;
           case "points":
             score += bonusValue;
+            break;
+          case "time":
+            levelTime += bonusValue;
             break;
         }
       }
