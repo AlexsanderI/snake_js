@@ -28,9 +28,10 @@ const levels = [
     timeStep: 125,
     food: 10,
     snakeLives: 3,
-    obstacles: ["fix", "x", "y"],
+    obstacles: ["fix", "fix", "y", "y", "fix"],
     bonuses: [
-      { type: "time", value: 20000, startFood: 1 },
+      { type: "break", value: 3, startFood: 1 },
+      // { type: "time", value: 20000, startFood: 1 },
       { type: "points", value: 10, startFood: 4 },
       { type: "lives", value: 20, startFood: 7 },
     ],
@@ -247,6 +248,19 @@ const moveObstacle = (direction) => {
   return obstacles;
 };
 
+const breakObstacles = () => {
+  const obstaclesToBreak = levels[level - 1].bonuses[currentBonus].value;
+  for (let i = 0; i < obstaclesToBreak; i++) {
+    // Удалите одно препятствие из массивов obstaclesX и obstaclesY
+    if (obstaclesX.length > 0) {
+      obstaclesX.pop();
+    } else if (obstaclesY.length > 0) {
+      obstaclesY.pop();
+    }
+  }
+  setEvent("obstacles broken", obstaclesToBreak);
+};
+
 const setBonusPosition = () => {
   let copySnake = snakeBody.slice();
   [bonusX, bonusY] = getFreeCell(copySnake.concat(obstacles, [foodX, foodY]));
@@ -418,6 +432,12 @@ const protocolExecutor = () => {
             break;
           case "time":
             levelTime += bonusValue;
+            break;
+          case "break":
+            if (isBonus && !isBonusEaten) {
+              breakObstacles();
+              isBonusEaten = true;
+            }
             break;
         }
       }
