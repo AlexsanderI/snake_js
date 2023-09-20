@@ -334,21 +334,29 @@ const checkingRestrictions = () => {
   if (isTime) {
     // проверка соприкосновения с препятствиями
     for (let i = 0; i < obstaclesX.length; i++)
-    if (snakeX === obstaclesX[i][0] && snakeY === obstaclesX[i][1]) {
-      setEvent('life lost', 'obstacle ' + obstaclesX[i][0] + ':' + obstaclesX[i][1] + ' contact');
-    }
+      if (snakeX === obstaclesX[i][0] && snakeY === obstaclesX[i][1]) {
+        setEvent(
+          "life lost",
+          "obstacle " + obstaclesX[i][0] + ":" + obstaclesX[i][1] + " contact"
+        );
+      }
 
-  for (let i = 0; i < obstaclesY.length; i++)
-    if (snakeX === obstaclesY[i][0] && snakeY === obstaclesY[i][1]) {
-      setEvent('life lost', 'obstacle ' + obstaclesY[i][0] + ':' + obstaclesY[i][1] + ' contact');
-    }
+    for (let i = 0; i < obstaclesY.length; i++)
+      if (snakeX === obstaclesY[i][0] && snakeY === obstaclesY[i][1]) {
+        setEvent(
+          "life lost",
+          "obstacle " + obstaclesY[i][0] + ":" + obstaclesY[i][1] + " contact"
+        );
+      }
 
-  for (let i = 0; i < obstaclesF.length; i++)
-    if (snakeX === obstaclesF[i][0] && snakeY === obstaclesF[i][1]) {
-      setEvent('life lost', 'obstacle ' + obstaclesF[i][0] + ':' + obstaclesF[i][1] + ' contact');
-    }
+    for (let i = 0; i < obstaclesF.length; i++)
+      if (snakeX === obstaclesF[i][0] && snakeY === obstaclesF[i][1]) {
+        setEvent(
+          "life lost",
+          "obstacle " + obstaclesF[i][0] + ":" + obstaclesF[i][1] + " contact"
+        );
+      }
     // проверка соприкосновения с границами поля
-
     if (snakeX <= 0 || snakeX > field || snakeY <= 0 || snakeY > field) {
       setEvent("life lost", "border " + snakeX + ":" + snakeY + " contact");
     }
