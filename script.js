@@ -30,8 +30,9 @@ const levels = [
     snakeLives: 3,
     obstacles: ["fix", "x", "y"],
     bonuses: [
-      { type: "time", value: 20000, startFood: 1 },
-      { type: "points", value: 10, startFood: 4 },
+      { type: "break", value: 3, startFood: 1 },
+      { type: "time", value: 20000, startFood: 4 },
+      // { type: "points", value: 10, startFood: 4 },
       { type: "lives", value: 20, startFood: 7 },
     ],
     maxScores: 39,
