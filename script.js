@@ -80,6 +80,7 @@ let obstacleStep = [];
 let obstaclesX = [];
 let obstaclesY = [];
 let obstaclesF = [];
+let breakObstacleCount = 0;
 let isRender = false;
 
 const setEvent = (newEvent, newValue) => {
@@ -257,6 +258,19 @@ const setBonusPosition = () => {
   );
 };
 
+const breakObstacles = () => {
+  const obstaclesToBreak = levels[level - 1].bonuses[currentBonus].value;
+  for (let i = 0; i < obstaclesToBreak; i++) {
+    // Удалите одно препятствие из массивов obstaclesX и obstaclesY
+    if (obstaclesX.length > 0) {
+      obstaclesX.pop();
+    } else if (obstaclesY.length > 0) {
+      obstaclesY.pop();
+    }
+  }
+  setEvent("obstacles broken", obstaclesToBreak);
+};
+
 const changeDirection = (e) => {
   if (isRender) {
     const { event } = protocol[protocol.length - 1];
@@ -331,15 +345,28 @@ const render = () => {
 /*
   функция checkingRestrictions() проверяет, выполняются ли установленные игрой ограничения
 */
+
 const checkingRestrictions = () => {
-  if (isTime && isRender) {
+  if (
+    isTime
+    //  && isRender
+  ) {
     // проверка соприкосновения с препятствиями
     for (let i = 0; i < obstaclesX.length; i++)
       if (snakeX === obstaclesX[i][0] && snakeY === obstaclesX[i][1]) {
-        setEvent(
-          "life lost",
-          "obstacle " + obstaclesX[i][0] + ":" + obstaclesX[i][1] + " contact"
-        );
+        if (
+          breakObstacleCount < levels[level - 1].bonuses[currentBonus].value
+        ) {
+          // Змейка может разрушить препятствие
+          obstacles.splice(i, 1); // Удалить препятствие из массива
+          setEvent("obstacle broken", snakeX + ":" + snakeY);
+          breakObstacleCount++;
+        } else {
+          setEvent(
+            "life lost",
+            "obstacle " + obstaclesX[i][0] + ":" + obstaclesX[i][1] + " contact"
+          );
+        }
       }
 
     for (let i = 0; i < obstaclesY.length; i++)
@@ -435,6 +462,12 @@ const protocolExecutor = () => {
             break;
           case "time":
             levelTime += bonusValue;
+            break;
+          case "break":
+            if (isBonus && !isBonusEaten) {
+              isBonusEaten = true;
+              breakObstacleCount = 0; // Сбросить счетчик разрушенных препятствий
+            }
             break;
         }
       }
