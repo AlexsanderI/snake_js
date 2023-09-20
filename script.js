@@ -331,7 +331,7 @@ const render = () => {
   функция checkingRestrictions() проверяет, выполняются ли установленные игрой ограничения
 */
 const checkingRestrictions = () => {
-  if (isTime) {
+  if (isTime && isRender) {
     // проверка соприкосновения с препятствиями
     for (let i = 0; i < obstaclesX.length; i++)
       if (snakeX === obstaclesX[i][0] && snakeY === obstaclesX[i][1]) {
@@ -373,6 +373,7 @@ const checkingRestrictions = () => {
         );
       }
     }
+    isRender = false;
   }
 };
 /*
