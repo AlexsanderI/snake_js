@@ -30,7 +30,7 @@ const levels = [
     snakeLives: 3,
     obstacles: ["fix", "x", "y"],
     bonuses: [
-      { type: "break", value: 3, startFood: 1 },
+      { type: "break", value: 0, startFood: 1 },
       { type: "time", value: 20000, startFood: 4 },
       // { type: "points", value: 10, startFood: 4 },
       { type: "lives", value: 20, startFood: 7 },
@@ -80,9 +80,8 @@ let obstacleStep = [];
 let obstaclesX = [];
 let obstaclesY = [];
 let obstaclesF = [];
-let breakObstacleCount = 0;
 let isRender = false;
-let canBreakObstacles = false;
+let isObstaclesBroken = false;
 
 const setEvent = (newEvent, newValue) => {
   const newRecord = { time: time, event: newEvent, value: newValue };
@@ -257,23 +256,6 @@ const setBonusPosition = () => {
     `set ${levels[level - 1].bonuses[currentBonus].type} bonus`,
     bonusX + ":" + bonusY
   );
-
-  if (levels[level - 1].bonuses[currentBonus].type === "break") {
-    canBreakObstacles = true;
-  }
-};
-
-const breakObstacles = () => {
-  const obstaclesToBreak = levels[level - 1].bonuses[currentBonus].value;
-  for (let i = 0; i < obstaclesToBreak; i++) {
-    // Удалите одно препятствие из массивов obstaclesX и obstaclesY
-    if (obstaclesX.length > 0) {
-      obstaclesX.pop();
-    } else if (obstaclesY.length > 0) {
-      obstaclesY.pop();
-    }
-  }
-  setEvent("obstacles broken", obstaclesToBreak);
 };
 
 const changeDirection = (e) => {
@@ -350,70 +332,36 @@ const render = () => {
 /*
   функция checkingRestrictions() проверяет, выполняются ли установленные игрой ограничения
 */
-
 const checkingRestrictions = () => {
   if (isTime && isRender) {
     // проверка соприкосновения с препятствиями
-    for (let i = 0; i < obstaclesX.length; i++) {
+    for (let i = 0; i < obstaclesX.length; i++)
       if (snakeX === obstaclesX[i][0] && snakeY === obstaclesX[i][1]) {
-        if (canBreakObstacles) {
-          // Змейка может разрушить препятствие
-          obstaclesX.splice(i, 1); // Удалить препятствие из массива
-          setEvent("obstacle broken", snakeX + ":" + snakeY);
-          breakObstacleCount++;
-        } else {
-          // Змейка не может разрушить препятствие, теряется жизнь
-          setEvent(
-            "life lost",
-            "obstacle " + obstaclesX[i][0] + ":" + obstaclesX[i][1] + " contact"
-          );
-          isMistake = true; // Set the mistake flag
-        }
+        setEvent(
+          "life lost",
+          "obstacle " + obstaclesX[i][0] + ":" + obstaclesX[i][1] + " contact"
+        );
       }
-    }
 
-    for (let i = 0; i < obstaclesY.length; i++) {
+    for (let i = 0; i < obstaclesY.length; i++)
       if (snakeX === obstaclesY[i][0] && snakeY === obstaclesY[i][1]) {
-        if (canBreakObstacles) {
-          // Змейка может разрушить препятствие
-          obstaclesY.splice(i, 1); // Удалить препятствие из массива
-          setEvent("obstacle broken", snakeX + ":" + snakeY);
-          breakObstacleCount++;
-        } else {
-          // Змейка не может разрушить препятствие, теряется жизнь
-          setEvent(
-            "life lost",
-            "obstacle " + obstaclesY[i][0] + ":" + obstaclesY[i][1] + " contact"
-          );
-          isMistake = true; // Set the mistake flag
-        }
+        setEvent(
+          "life lost",
+          "obstacle " + obstaclesY[i][0] + ":" + obstaclesY[i][1] + " contact"
+        );
       }
-    }
 
-    for (let i = 0; i < obstaclesF.length; i++) {
+    for (let i = 0; i < obstaclesF.length; i++)
       if (snakeX === obstaclesF[i][0] && snakeY === obstaclesF[i][1]) {
-        if (canBreakObstacles) {
-          // Змейка может разрушить препятствие
-          obstaclesF.splice(i, 1); // Удалить препятствие из массива
-          setEvent("obstacle broken", snakeX + ":" + snakeY);
-          breakObstacleCount++;
-        } else {
-          // Змейка не может разрушить препятствие, теряется жизнь
-          setEvent(
-            "life lost",
-            "obstacle " + obstaclesF[i][0] + ":" + obstaclesF[i][1] + " contact"
-          );
-          isMistake = true; // Set the mistake flag
-        }
+        setEvent(
+          "life lost",
+          "obstacle " + obstaclesF[i][0] + ":" + obstaclesF[i][1] + " contact"
+        );
       }
-    }
-
     // проверка соприкосновения с границами поля
     if (snakeX <= 0 || snakeX > field || snakeY <= 0 || snakeY > field) {
       setEvent("life lost", "border " + snakeX + ":" + snakeY + " contact");
-      isMistake = true; // Set the mistake flag
     }
-
     // проверка соприкосновения змейки с самой собой
     for (let i = 0; i < snakeBody.length; i++) {
       if (
@@ -425,12 +373,13 @@ const checkingRestrictions = () => {
           "life lost",
           "contact with oneself " + snakeBody[0][0] + ":" + snakeBody[0][1]
         );
-        isMistake = true; // Set the mistake flag
       }
     }
-
     isRender = false;
   }
+};
+const isSamePosition = (x, y, obstacle) => {
+  return x === obstacle[0] && y === obstacle[1];
 };
 
 /*
@@ -442,13 +391,15 @@ const checkingInteractions = () => {
     setEvent("food eaten", currentFood + 1);
   }
   // проверка соприкосновения змейки с бонусом
-  if (snakeX === bonusX && snakeY === bonusY && isBonus) {
+  if (snakeX === bonusX && snakeY === bonusY && isBonus && !isBonusEaten) {
+    isBonusEaten = true;
+    const bonusValue = levels[level - 1].bonuses[currentBonus].value;
     setEvent(
       "bonus eaten",
-      `${levels[level - 1].bonuses[currentBonus].value} ${
-        levels[level - 1].bonuses[currentBonus].type
-      }`
+      `${bonusValue} ${levels[level - 1].bonuses[currentBonus].type}`
     );
+    obstaclesBroken += bonusValue; // Увеличьте количество разбитых препятствий
+    removeObstacles(); // Вызовите функцию для удаления препятствий
   }
 };
 /*
@@ -492,8 +443,9 @@ const protocolExecutor = () => {
           case "time":
             levelTime += bonusValue;
             break;
-          case "break":
-            canBreakObstacles = false; // Установить canBreakObstacles в false
+          case "break": // Добавьте обработку бонуса типа "break"
+            obstaclesBroken += bonusValue; // Увеличьте количество разбитых препятствий
+            removeObstacles(); // Вызовите функцию для удаления препятствий
             break;
         }
       }
