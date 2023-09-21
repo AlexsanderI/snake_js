@@ -82,6 +82,7 @@ let obstaclesY = [];
 let obstaclesF = [];
 let breakObstacleCount = 0;
 let isRender = false;
+let canBreakObstacles = false;
 
 const setEvent = (newEvent, newValue) => {
   const newRecord = { time: time, event: newEvent, value: newValue };
@@ -256,6 +257,10 @@ const setBonusPosition = () => {
     `set ${levels[level - 1].bonuses[currentBonus].type} bonus`,
     bonusX + ":" + bonusY
   );
+
+  if (levels[level - 1].bonuses[currentBonus].type === "break") {
+    canBreakObstacles = true;
+  }
 };
 
 const breakObstacles = () => {
@@ -347,47 +352,68 @@ const render = () => {
 */
 
 const checkingRestrictions = () => {
-  if (
-    isTime
-    //  && isRender
-  ) {
+  if (isTime && isRender) {
     // проверка соприкосновения с препятствиями
-    for (let i = 0; i < obstaclesX.length; i++)
+    for (let i = 0; i < obstaclesX.length; i++) {
       if (snakeX === obstaclesX[i][0] && snakeY === obstaclesX[i][1]) {
-        if (
-          breakObstacleCount < levels[level - 1].bonuses[currentBonus].value
-        ) {
+        if (canBreakObstacles) {
           // Змейка может разрушить препятствие
-          obstacles.splice(i, 1); // Удалить препятствие из массива
+          obstaclesX.splice(i, 1); // Удалить препятствие из массива
           setEvent("obstacle broken", snakeX + ":" + snakeY);
           breakObstacleCount++;
         } else {
+          // Змейка не может разрушить препятствие, теряется жизнь
           setEvent(
             "life lost",
             "obstacle " + obstaclesX[i][0] + ":" + obstaclesX[i][1] + " contact"
           );
+          isMistake = true; // Set the mistake flag
         }
       }
+    }
 
-    for (let i = 0; i < obstaclesY.length; i++)
+    for (let i = 0; i < obstaclesY.length; i++) {
       if (snakeX === obstaclesY[i][0] && snakeY === obstaclesY[i][1]) {
-        setEvent(
-          "life lost",
-          "obstacle " + obstaclesY[i][0] + ":" + obstaclesY[i][1] + " contact"
-        );
+        if (canBreakObstacles) {
+          // Змейка может разрушить препятствие
+          obstaclesY.splice(i, 1); // Удалить препятствие из массива
+          setEvent("obstacle broken", snakeX + ":" + snakeY);
+          breakObstacleCount++;
+        } else {
+          // Змейка не может разрушить препятствие, теряется жизнь
+          setEvent(
+            "life lost",
+            "obstacle " + obstaclesY[i][0] + ":" + obstaclesY[i][1] + " contact"
+          );
+          isMistake = true; // Set the mistake flag
+        }
       }
+    }
 
-    for (let i = 0; i < obstaclesF.length; i++)
+    for (let i = 0; i < obstaclesF.length; i++) {
       if (snakeX === obstaclesF[i][0] && snakeY === obstaclesF[i][1]) {
-        setEvent(
-          "life lost",
-          "obstacle " + obstaclesF[i][0] + ":" + obstaclesF[i][1] + " contact"
-        );
+        if (canBreakObstacles) {
+          // Змейка может разрушить препятствие
+          obstaclesF.splice(i, 1); // Удалить препятствие из массива
+          setEvent("obstacle broken", snakeX + ":" + snakeY);
+          breakObstacleCount++;
+        } else {
+          // Змейка не может разрушить препятствие, теряется жизнь
+          setEvent(
+            "life lost",
+            "obstacle " + obstaclesF[i][0] + ":" + obstaclesF[i][1] + " contact"
+          );
+          isMistake = true; // Set the mistake flag
+        }
       }
+    }
+
     // проверка соприкосновения с границами поля
     if (snakeX <= 0 || snakeX > field || snakeY <= 0 || snakeY > field) {
       setEvent("life lost", "border " + snakeX + ":" + snakeY + " contact");
+      isMistake = true; // Set the mistake flag
     }
+
     // проверка соприкосновения змейки с самой собой
     for (let i = 0; i < snakeBody.length; i++) {
       if (
@@ -399,11 +425,14 @@ const checkingRestrictions = () => {
           "life lost",
           "contact with oneself " + snakeBody[0][0] + ":" + snakeBody[0][1]
         );
+        isMistake = true; // Set the mistake flag
       }
     }
+
     isRender = false;
   }
 };
+
 /*
   функция checkingInteractions() проверяет, происходят ли доступные игроку взаимодействия
 */
@@ -464,10 +493,7 @@ const protocolExecutor = () => {
             levelTime += bonusValue;
             break;
           case "break":
-            if (isBonus && !isBonusEaten) {
-              isBonusEaten = true;
-              breakObstacleCount = 0; // Сбросить счетчик разрушенных препятствий
-            }
+            canBreakObstacles = false; // Установить canBreakObstacles в false
             break;
         }
       }
