@@ -30,7 +30,7 @@ const levels = [
     snakeLives: 3,
     obstacles: ["fix", "x", "y"],
     bonuses: [
-      { type: "break", value: 0, startFood: 1 },
+      { type: "break", value: 1, startFood: 1 }, // value порядковый номер type: "break"
       // { type: "time", value: 20000, startFood: 1 },
       { type: "points", value: 10, startFood: 4 },
       { type: "lives", value: 20, startFood: 7 },
@@ -83,6 +83,7 @@ let obstaclesF = [];
 let isRender = false;
 let isObstaclesBroken = false;
 let brokenObstacle = {};
+let startFoodBrokenObstacles = 0;
 
 const setEvent = (newEvent, newValue) => {
   const newRecord = { time: time, event: newEvent, value: newValue };
@@ -190,6 +191,12 @@ const counter = () => {
   // проверка на прерывание игры
   if (time >= levelTime) setEvent("game over", "time limit");
   // проверка продолжительности бонуса разбивания препятсвия
+  startFoodBrokenObstacles = protocol.findIndex((note) =>
+    note.value.includes("break")
+  );
+  if (startFoodBrokenObstacles !== -1) {
+    //
+  }
 };
 
 const setFoodPosition = () => {
@@ -307,6 +314,7 @@ const render = () => {
   // второй создается еда
   screen += `<div class="food" style="grid-area: ${foodY} / ${foodX}"></div>`;
   // третьим создается препятствие
+  // console.log(obstaclesF);
   for (let i = 0; i < obstaclesF.length; i++)
     screen += `<div class="obstacle" style="grid-area: ${obstaclesF[i][1]} / ${obstaclesF[i][0]}"></div>`;
   for (let i = 0; i < obstaclesX.length; i++)
@@ -391,7 +399,6 @@ const checkingRestrictions = () => {
           );
           brokenObstacle.coord = obstaclesF.slice();
           brokenObstacle.name = "F";
-          console.log(brokenObstacle.name);
         }
     }
     // проверка соприкосновения с границами поля
@@ -473,6 +480,9 @@ const protocolExecutor = () => {
           case "time":
             levelTime += bonusValue;
             break;
+          case "break":
+            isObstaclesBroken = true;
+            break;
         }
       }
       break;
@@ -481,22 +491,22 @@ const protocolExecutor = () => {
         case "X":
           obstaclesX = obstaclesX.filter(
             (obstacle) =>
-              obstacle[0] !== brokenObstacle.coord[0] &&
-              obstacle[1] !== brokenObstacle.coord[1]
+              obstacle[0] === brokenObstacle.coord[0] &&
+              obstacle[1] === brokenObstacle.coord[1]
           );
           break;
         case "Y":
           obstaclesY = obstaclesY.filter(
             (obstacle) =>
-              obstacle[0] !== brokenObstacle.coord[0] &&
-              obstacle[1] !== brokenObstacle.coord[1]
+              obstacle[0] === brokenObstacle.coord[0] &&
+              obstacle[1] === brokenObstacle.coord[1]
           );
           break;
         case "F":
           obstaclesF = obstaclesF.filter(
             (obstacle) =>
-              obstacle[0] !== brokenObstacle.coord[0] &&
-              obstacle[1] !== brokenObstacle.coord[1]
+              obstacle[0] === brokenObstacle.coord[0] &&
+              obstacle[1] === brokenObstacle.coord[1]
           );
           break;
       }
