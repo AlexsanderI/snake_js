@@ -31,8 +31,8 @@ const levels = [
     obstacles: ["fix", "x", "y"],
     bonuses: [
       { type: "break", value: 0, startFood: 1 },
-      { type: "time", value: 20000, startFood: 4 },
-      // { type: "points", value: 10, startFood: 4 },
+      // { type: "time", value: 20000, startFood: 1 },
+      { type: "points", value: 10, startFood: 4 },
       { type: "lives", value: 20, startFood: 7 },
     ],
     maxScores: 39,
@@ -82,6 +82,7 @@ let obstaclesY = [];
 let obstaclesF = [];
 let isRender = false;
 let isObstaclesBroken = false;
+let brokenObstacle = {};
 
 const setEvent = (newEvent, newValue) => {
   const newRecord = { time: time, event: newEvent, value: newValue };
@@ -188,6 +189,7 @@ const counter = () => {
   }
   // проверка на прерывание игры
   if (time >= levelTime) setEvent("game over", "time limit");
+  // проверка продолжительности бонуса разбивания препятсвия
 };
 
 const setFoodPosition = () => {
@@ -332,32 +334,66 @@ const render = () => {
 /*
   функция checkingRestrictions() проверяет, выполняются ли установленные игрой ограничения
 */
+
 const checkingRestrictions = () => {
   if (isTime && isRender) {
     // проверка соприкосновения с препятствиями
-    for (let i = 0; i < obstaclesX.length; i++)
-      if (snakeX === obstaclesX[i][0] && snakeY === obstaclesX[i][1]) {
-        setEvent(
-          "life lost",
-          "obstacle " + obstaclesX[i][0] + ":" + obstaclesX[i][1] + " contact"
-        );
-      }
+    if (!isObstaclesBroken) {
+      for (let i = 0; i < obstaclesX.length; i++)
+        if (snakeX === obstaclesX[i][0] && snakeY === obstaclesX[i][1]) {
+          setEvent(
+            "life lost",
+            "obstacle " + obstaclesX[i][0] + ":" + obstaclesX[i][1] + " contact"
+          );
+        }
 
-    for (let i = 0; i < obstaclesY.length; i++)
-      if (snakeX === obstaclesY[i][0] && snakeY === obstaclesY[i][1]) {
-        setEvent(
-          "life lost",
-          "obstacle " + obstaclesY[i][0] + ":" + obstaclesY[i][1] + " contact"
-        );
-      }
+      for (let i = 0; i < obstaclesY.length; i++)
+        if (snakeX === obstaclesY[i][0] && snakeY === obstaclesY[i][1]) {
+          setEvent(
+            "life lost",
+            "obstacle " + obstaclesY[i][0] + ":" + obstaclesY[i][1] + " contact"
+          );
+        }
 
-    for (let i = 0; i < obstaclesF.length; i++)
-      if (snakeX === obstaclesF[i][0] && snakeY === obstaclesF[i][1]) {
-        setEvent(
-          "life lost",
-          "obstacle " + obstaclesF[i][0] + ":" + obstaclesF[i][1] + " contact"
-        );
-      }
+      for (let i = 0; i < obstaclesF.length; i++)
+        if (snakeX === obstaclesF[i][0] && snakeY === obstaclesF[i][1]) {
+          setEvent(
+            "life lost",
+            "obstacle " + obstaclesF[i][0] + ":" + obstaclesF[i][1] + " contact"
+          );
+        }
+    } else {
+      for (let i = 0; i < obstaclesX.length; i++)
+        if (snakeX === obstaclesX[i][0] && snakeY === obstaclesX[i][1]) {
+          setEvent(
+            "obstacles is broken",
+            "obstacle " + obstaclesX[i][0] + ":" + obstaclesX[i][1] + " contact"
+          );
+          brokenObstacle.coord = obstaclesX.slice();
+          brokenObstacle.name = "X";
+        }
+
+      for (let i = 0; i < obstaclesY.length; i++)
+        if (snakeX === obstaclesY[i][0] && snakeY === obstaclesY[i][1]) {
+          setEvent(
+            "obstacles is broken",
+            "obstacle " + obstaclesY[i][0] + ":" + obstaclesY[i][1] + " contact"
+          );
+          brokenObstacle.coord = obstaclesY.slice();
+          brokenObstacle.name = "Y";
+        }
+
+      for (let i = 0; i < obstaclesF.length; i++)
+        if (snakeX === obstaclesF[i][0] && snakeY === obstaclesF[i][1]) {
+          setEvent(
+            "obstacles is broken",
+            "obstacle " + obstaclesF[i][0] + ":" + obstaclesF[i][1] + " contact"
+          );
+          brokenObstacle.coord = obstaclesF.slice();
+          brokenObstacle.name = "F";
+          console.log(brokenObstacle.name);
+        }
+    }
     // проверка соприкосновения с границами поля
     if (snakeX <= 0 || snakeX > field || snakeY <= 0 || snakeY > field) {
       setEvent("life lost", "border " + snakeX + ":" + snakeY + " contact");
@@ -378,10 +414,6 @@ const checkingRestrictions = () => {
     isRender = false;
   }
 };
-const isSamePosition = (x, y, obstacle) => {
-  return x === obstacle[0] && y === obstacle[1];
-};
-
 /*
   функция checkingInteractions() проверяет, происходят ли доступные игроку взаимодействия
 */
@@ -391,15 +423,13 @@ const checkingInteractions = () => {
     setEvent("food eaten", currentFood + 1);
   }
   // проверка соприкосновения змейки с бонусом
-  if (snakeX === bonusX && snakeY === bonusY && isBonus && !isBonusEaten) {
-    isBonusEaten = true;
-    const bonusValue = levels[level - 1].bonuses[currentBonus].value;
+  if (snakeX === bonusX && snakeY === bonusY && isBonus) {
     setEvent(
       "bonus eaten",
-      `${bonusValue} ${levels[level - 1].bonuses[currentBonus].type}`
+      `${levels[level - 1].bonuses[currentBonus].value} ${
+        levels[level - 1].bonuses[currentBonus].type
+      }`
     );
-    obstaclesBroken += bonusValue; // Увеличьте количество разбитых препятствий
-    removeObstacles(); // Вызовите функцию для удаления препятствий
   }
 };
 /*
@@ -443,11 +473,32 @@ const protocolExecutor = () => {
           case "time":
             levelTime += bonusValue;
             break;
-          case "break": // Добавьте обработку бонуса типа "break"
-            obstaclesBroken += bonusValue; // Увеличьте количество разбитых препятствий
-            removeObstacles(); // Вызовите функцию для удаления препятствий
-            break;
         }
+      }
+      break;
+    case "obstacles is broken":
+      switch (brokenObstacle.name) {
+        case "X":
+          obstaclesX = obstaclesX.filter(
+            (obstacle) =>
+              obstacle[0] !== brokenObstacle.coord[0] &&
+              obstacle[1] !== brokenObstacle.coord[1]
+          );
+          break;
+        case "Y":
+          obstaclesY = obstaclesY.filter(
+            (obstacle) =>
+              obstacle[0] !== brokenObstacle.coord[0] &&
+              obstacle[1] !== brokenObstacle.coord[1]
+          );
+          break;
+        case "F":
+          obstaclesF = obstaclesF.filter(
+            (obstacle) =>
+              obstacle[0] !== brokenObstacle.coord[0] &&
+              obstacle[1] !== brokenObstacle.coord[1]
+          );
+          break;
       }
       break;
     case "start level":
