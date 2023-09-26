@@ -24,15 +24,16 @@ const levels = [
   // },
   {
     field: 30,
-    time: 35000,
+    time: 60000,
     timeStep: 125,
     food: 10,
     snakeLives: 3,
     obstacles: ["fix", "x", "y"],
     bonuses: [
-      { type: "break", value: 1, startFood: 1 }, // value порядковый номер type: "break"
-      // { type: "time", value: 20000, startFood: 1 },
-      { type: "points", value: 10, startFood: 4 },
+      { type: "break", value: "", startFood: 1 }, // value порядковый номер type: "break"
+      // { type: "time", value: 20000, startFood: 4 },
+      { type: "break", value: "", startFood: 4 },
+      // { type: "points", value: 10, startFood: 4 },
       { type: "lives", value: 20, startFood: 7 },
     ],
     maxScores: 39,
@@ -188,14 +189,38 @@ const counter = () => {
       ? setEvent("game over", "lives limit")
       : setEvent("level continue", level);
   }
+
   // проверка на прерывание игры
   if (time >= levelTime) setEvent("game over", "time limit");
   // проверка продолжительности бонуса разбивания препятсвия
-  startFoodBrokenObstacles = protocol.findIndex((note) =>
-    note.value.includes("break")
-  );
-  if (startFoodBrokenObstacles !== -1) {
-    //
+
+  // Шаг 1: Проверить значение isObstaclesBroken
+  if (isObstaclesBroken === true) {
+    // Шаг 2: Найти позицию последней записи с event.event === "bonus eaten" и event.value === "break"
+    let breakBonusIndex = -1;
+    for (let i = protocol.length - 1; i >= 0; i--) {
+      if (
+        protocol[i].event === "bonus eaten" &&
+        protocol[i].value === " break"
+      ) {
+        breakBonusIndex = i;
+        break; // Найдена запись, выходим из цикла
+      }
+    }
+
+    if (breakBonusIndex !== -1) {
+      // Шаг 3: Создать копию протокола событий с конца массива до найденной позиции
+      const copiedProtocol = protocol.slice(breakBonusIndex + 1);
+
+      // Шаг 4: Найти записи с event.event === "food eaten" в копии
+      const foodEatenEvents = copiedProtocol.filter(
+        (event) => event.event === "food eaten"
+      );
+      // Шаг 5: Если есть две записи с event.event === "food eaten", установить isObstaclesBroken в false
+      if (foodEatenEvents.length >= 2) {
+        isObstaclesBroken = false;
+      }
+    }
   }
 };
 
