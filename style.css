@@ -55,6 +55,10 @@ body {
   background: lime;
 }
 
+.play-board .bonus-break {
+  background: rgb(255, 0, 162);
+}
+
 .play-board .head {
   background: #60cbff;
 }
