@@ -97,6 +97,17 @@ const setEvent = (newEvent, newValue) => {
 };
 
 const getFreeCell = (bookedCells) => {
+  /*
+  Для того, чтобы не размещать еду и бонусы по линиям движения препятствий, надо:
+
+  1) определить, есть ли движущиеся препятствия (массивы obstaclesX и obstaclesY должны быть ненулевой длины)
+  2) если есть движущиеся препятствия, то продолжать поиск свободной клетки до тех пор, пока freeCellX будет 
+     совпадать с координатами х препятствий, движущихся по х, 
+     а freeCellY будет совпадать с координатами y препятствий, движущихся по y
+  3) составить новый алгоритм генерации координат еды
+  4) составить новый алгоритм генерации координат бонусов
+  5) составить новый алгоритм генерации координат препятствий
+  */
   const snakeReserve = [];
   const snakeRows = Math.floor(foodLevel / field);
   for (let i = 0; i < snakeRows; i++) {
@@ -189,11 +200,9 @@ const counter = () => {
       ? setEvent("game over", "lives limit")
       : setEvent("level continue", level);
   }
-
   // проверка на прерывание игры
   if (time >= levelTime) setEvent("game over", "time limit");
   // проверка продолжительности бонуса разбивания препятсвия
-
   // Шаг 1: Проверить значение isObstaclesBroken
   if (isObstaclesBroken === true) {
     // Шаг 2: Найти позицию последней записи с event.event === "bonus eaten" и event.value === "break"
@@ -207,11 +216,9 @@ const counter = () => {
         break; // Найдена запись, выходим из цикла
       }
     }
-
     if (breakBonusIndex !== -1) {
       // Шаг 3: Создать копию протокола событий с конца массива до найденной позиции
       const copiedProtocol = protocol.slice(breakBonusIndex + 1);
-
       // Шаг 4: Найти записи с event.event === "food eaten" в копии
       const foodEatenEvents = copiedProtocol.filter(
         (event) => event.event === "food eaten"
@@ -225,6 +232,9 @@ const counter = () => {
 };
 
 const setFoodPosition = () => {
+  /*
+  Алгоритм генерации координат еды с учетом движущихся препятствий:
+  */
   let copySnake = snakeBody.slice();
   if (currentFood !== foodLevel - 1) {
     [foodX, foodY] = getFreeCell(copySnake.concat(obstacles));
@@ -233,6 +243,9 @@ const setFoodPosition = () => {
 };
 
 const setObstaclePosition = (type) => {
+  /*
+  Алгоритм генерации координат препятствий с учетом движущихся препятствий:
+  */
   let booking = [];
   let obstacles = [];
   let obstaclesDirection =
@@ -284,6 +297,9 @@ const moveObstacle = (direction) => {
 };
 
 const setBonusPosition = () => {
+  /*
+  Алгоритм генерации координат бонусов с учетом движущихся препятствий:
+  */
   let copySnake = snakeBody.slice();
   [bonusX, bonusY] = getFreeCell(copySnake.concat(obstacles, [foodX, foodY]));
   setEvent(
