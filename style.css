@@ -59,6 +59,14 @@ body {
   background: rgb(255, 0, 162);
 }
 
+.play-board .bonus-foodFreeze {
+  background: rgb(69, 33, 228);
+}
+
+.play-board .bonus-breakWall {
+  background: rgb(245, 243, 243);
+}
+
 .play-board .head {
   background: #60cbff;
 }

@@ -11,6 +11,18 @@ function millisecondsToMinutesAndSeconds(milliseconds) {
   var seconds = ((milliseconds % 60000) / 1000).toFixed(0);
   return minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
 }
+
+function findLastEventIndex(protocol, eventName, eventValue) {
+  let lastIndex = -1;
+  for (let i = protocol.length - 1; i >= 0; i--) {
+    if (protocol[i].event === eventName && protocol[i].value === eventValue) {
+      lastIndex = i;
+      break;
+    }
+  }
+  return lastIndex;
+}
+
 const levels = [
   // {
   //   field: 15,
@@ -25,16 +37,18 @@ const levels = [
   {
     field: 30,
     time: 60000,
-    timeStep: 125,
+    timeStep: 500,
     food: 10,
     snakeLives: 3,
     obstacles: ["fix", "x", "y"],
     bonuses: [
-      { type: "break", value: "", startFood: 1 }, // value порядковый номер type: "break"
+      { type: "breakWall", value: "", startFood: 1 },
+      { type: "foodFreeze", value: "", startFood: 4 },
+      // { type: "break", value: "", startFood: 1 }, // value порядковый номер type: "break"
       // { type: "time", value: 20000, startFood: 4 },
-      { type: "break", value: "", startFood: 4 },
+      // { type: "break", value: "", startFood: 4 },
       // { type: "points", value: 10, startFood: 4 },
-      { type: "lives", value: 20, startFood: 7 },
+      { type: "lives", value: 20, startFood: 4 },
     ],
     maxScores: 39,
   },
@@ -84,7 +98,8 @@ let obstaclesF = [];
 let isRender = false;
 let isObstaclesBroken = false;
 let brokenObstacle = {};
-let startFoodBrokenObstacles = 0;
+let isFoodEatRise = true;
+let isBreakWallActive = false;
 
 const setEvent = (newEvent, newValue) => {
   const newRecord = { time: time, event: newEvent, value: newValue };
@@ -97,17 +112,6 @@ const setEvent = (newEvent, newValue) => {
 };
 
 const getFreeCell = (bookedCells) => {
-  /*
-  Для того, чтобы не размещать еду и бонусы по линиям движения препятствий, надо:
-
-  1) определить, есть ли движущиеся препятствия (массивы obstaclesX и obstaclesY должны быть ненулевой длины)
-  2) если есть движущиеся препятствия, то продолжать поиск свободной клетки до тех пор, пока freeCellX будет 
-     совпадать с координатами х препятствий, движущихся по х, 
-     а freeCellY будет совпадать с координатами y препятствий, движущихся по y
-  3) составить новый алгоритм генерации координат еды
-  4) составить новый алгоритм генерации координат бонусов
-  5) составить новый алгоритм генерации координат препятствий
-  */
   const snakeReserve = [];
   const snakeRows = Math.floor(foodLevel / field);
   for (let i = 0; i < snakeRows; i++) {
@@ -203,29 +207,53 @@ const counter = () => {
   // проверка на прерывание игры
   if (time >= levelTime) setEvent("game over", "time limit");
   // проверка продолжительности бонуса разбивания препятсвия
-  // Шаг 1: Проверить значение isObstaclesBroken
+
   if (isObstaclesBroken === true) {
-    // Шаг 2: Найти позицию последней записи с event.event === "bonus eaten" и event.value === "break"
-    let breakBonusIndex = -1;
-    for (let i = protocol.length - 1; i >= 0; i--) {
-      if (
-        protocol[i].event === "bonus eaten" &&
-        protocol[i].value === " break"
-      ) {
-        breakBonusIndex = i;
-        break; // Найдена запись, выходим из цикла
-      }
-    }
+    const breakBonusIndex = findLastEventIndex(
+      protocol,
+      "bonus eaten",
+      " break"
+    );
     if (breakBonusIndex !== -1) {
-      // Шаг 3: Создать копию протокола событий с конца массива до найденной позиции
       const copiedProtocol = protocol.slice(breakBonusIndex + 1);
-      // Шаг 4: Найти записи с event.event === "food eaten" в копии
       const foodEatenEvents = copiedProtocol.filter(
         (event) => event.event === "food eaten"
       );
-      // Шаг 5: Если есть две записи с event.event === "food eaten", установить isObstaclesBroken в false
       if (foodEatenEvents.length >= 2) {
         isObstaclesBroken = false;
+      }
+    }
+  }
+
+  if (isFoodEatRise === false) {
+    const bonusFoodFreezeIndex = findLastEventIndex(
+      protocol,
+      "bonus eaten",
+      " foodFreeze"
+    );
+    if (bonusFoodFreezeIndex !== -1) {
+      const copiedProtocol = protocol.slice(bonusFoodFreezeIndex + 1);
+      const foodEatenEvent = copiedProtocol.filter(
+        (event) => event.event === "food eaten"
+      );
+      if (foodEatenEvent.length >= 2) {
+        isFoodEatRise = true;
+      }
+    }
+  }
+  if (isBreakWallActive === true) {
+    const bonusBreakWall = findLastEventIndex(
+      protocol,
+      "bonus eaten",
+      " breakWall"
+    );
+    if (bonusBreakWall !== -1) {
+      const copiedProtocol = protocol.slice(bonusBreakWall + 1);
+      const foodEatenEvent = copiedProtocol.filter(
+        (event) => event.event === "food eaten"
+      );
+      if (foodEatenEvent.length >= 2) {
+        isBreakWallActive = false;
       }
     }
   }
@@ -346,6 +374,7 @@ const timer = () => {
     с учетом всех текущих изменений
   */
 const render = () => {
+  console.log(snakeBody);
   playBoard.style.gridTemplate = `repeat(${field}, 1fr) / repeat(${field}, 1fr)`;
   // первой создается голова змейки
   screen = `<div class="head" style="grid-area: ${snakeBody[0][1]} / ${snakeBody[0][0]}"></div>`;
@@ -442,10 +471,26 @@ const checkingRestrictions = () => {
           brokenObstacle.name = "F";
         }
     }
+
     // проверка соприкосновения с границами поля
-    if (snakeX <= 0 || snakeX > field || snakeY <= 0 || snakeY > field) {
+
+    if (
+      (snakeX <= 0 || snakeX > field || snakeY <= 0 || snakeY > field) &&
+      !isBreakWallActive
+    ) {
       setEvent("life lost", "border " + snakeX + ":" + snakeY + " contact");
+    } else {
+      if (snakeX < 0) {
+        snakeX = field + 1;
+      } else if (snakeX > field) {
+        snakeX = 0;
+      } else if (snakeY < 0) {
+        snakeY = field + 1;
+      } else if (snakeY > field) {
+        snakeY = 0;
+      }
     }
+
     // проверка соприкосновения змейки с самой собой
     for (let i = 0; i < snakeBody.length; i++) {
       if (
@@ -502,7 +547,9 @@ const protocolExecutor = () => {
   const { value, event } = protocol[protocol.length - 1];
   switch (event) {
     case "food eaten":
-      snakeBody.push([]);
+      if (isFoodEatRise) {
+        snakeBody.push([]);
+      }
       setFoodPosition();
       score += foodPoints;
       break;
@@ -523,6 +570,12 @@ const protocolExecutor = () => {
             break;
           case "break":
             isObstaclesBroken = true;
+            break;
+          case "foodFreeze":
+            isFoodEatRise = false;
+            break;
+          case "breakWall":
+            isBreakWallActive = true;
             break;
         }
       }
@@ -614,6 +667,7 @@ const protocolExecutor = () => {
       for (let i = 1; i < snakeLength; i++) snakeBody.push([snakeX - i, 1]);
       isTime = false;
       break;
+
     case "level continue":
       isMistake = false;
       break;
