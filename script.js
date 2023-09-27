@@ -374,7 +374,6 @@ const timer = () => {
     с учетом всех текущих изменений
   */
 const render = () => {
-  console.log(snakeBody);
   playBoard.style.gridTemplate = `repeat(${field}, 1fr) / repeat(${field}, 1fr)`;
   // первой создается голова змейки
   screen = `<div class="head" style="grid-area: ${snakeBody[0][1]} / ${snakeBody[0][0]}"></div>`;
@@ -384,7 +383,6 @@ const render = () => {
   // второй создается еда
   screen += `<div class="food" style="grid-area: ${foodY} / ${foodX}"></div>`;
   // третьим создается препятствие
-  // console.log(obstaclesF);
   for (let i = 0; i < obstaclesF.length; i++)
     screen += `<div class="obstacle" style="grid-area: ${obstaclesF[i][1]} / ${obstaclesF[i][0]}"></div>`;
   for (let i = 0; i < obstaclesX.length; i++)
@@ -473,7 +471,6 @@ const checkingRestrictions = () => {
     }
 
     // проверка соприкосновения с границами поля
-
     if (
       (snakeX <= 0 || snakeX > field || snakeY <= 0 || snakeY > field) &&
       !isBreakWallActive
@@ -516,7 +513,7 @@ const checkingInteractions = () => {
     setEvent("food eaten", currentFood + 1);
   }
   // проверка соприкосновения змейки с бонусом
-  if (snakeX === bonusX && snakeY === bonusY && isBonus) {
+  if (snakeX === bonusX && snakeY === bonusY && isBonus && !isBonusEaten) {
     setEvent(
       "bonus eaten",
       `${levels[level - 1].bonuses[currentBonus].value} ${
