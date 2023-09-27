@@ -532,7 +532,9 @@ const checkingInteractions = () => {
 const moveSnake = () => {
   if (stepX !== 0 || stepY !== 0) {
     snakeX += stepX;
+    if (snakeX === 0) snakeX = -1;
     snakeY += stepY;
+    if (snakeY === 0) snakeY = -1;
     // смещаем координаты каждого элемента в массиве
     // с координатами змейки на один элемент назад
     for (let i = snakeBody.length - 1; i > 0; i--) {
