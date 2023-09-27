@@ -11,6 +11,18 @@ function millisecondsToMinutesAndSeconds(milliseconds) {
   var seconds = ((milliseconds % 60000) / 1000).toFixed(0);
   return minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
 }
+
+function findLastEventIndex(protocol, eventName, eventValue) {
+  let lastIndex = -1;
+  for (let i = protocol.length - 1; i >= 0; i--) {
+    if (protocol[i].event === eventName && protocol[i].value === eventValue) {
+      lastIndex = i;
+      break;
+    }
+  }
+  return lastIndex;
+}
+
 const levels = [
   // {
   //   field: 15,
@@ -25,17 +37,18 @@ const levels = [
   {
     field: 30,
     time: 60000,
-    timeStep: 125,
+    timeStep: 500,
     food: 10,
     snakeLives: 3,
     obstacles: ["fix", "x", "y"],
     bonuses: [
-      { type: "foodFreeze", value: "", startFood: 1 },
+      { type: "breakWall", value: "", startFood: 1 },
+      { type: "foodFreeze", value: "", startFood: 4 },
       // { type: "break", value: "", startFood: 1 }, // value порядковый номер type: "break"
       // { type: "time", value: 20000, startFood: 4 },
-      { type: "break", value: "", startFood: 4 },
+      // { type: "break", value: "", startFood: 4 },
       // { type: "points", value: 10, startFood: 4 },
-      { type: "lives", value: 20, startFood: 7 },
+      { type: "lives", value: 20, startFood: 4 },
     ],
     maxScores: 39,
   },
@@ -86,6 +99,7 @@ let isRender = false;
 let isObstaclesBroken = false;
 let brokenObstacle = {};
 let isFoodEatRise = true;
+let isBreakWallActive = false;
 
 const setEvent = (newEvent, newValue) => {
   const newRecord = { time: time, event: newEvent, value: newValue };
@@ -193,65 +207,6 @@ const counter = () => {
   // проверка на прерывание игры
   if (time >= levelTime) setEvent("game over", "time limit");
   // проверка продолжительности бонуса разбивания препятсвия
-  // Шаг 1: Проверить значение isObstaclesBroken
-  // if (isObstaclesBroken === true) {
-  //   // Шаг 2: Найти позицию последней записи с event.event === "bonus eaten" и event.value === "break"
-  //   let breakBonusIndex = -1;
-  //   for (let i = protocol.length - 1; i >= 0; i--) {
-  //     if (
-  //       protocol[i].event === "bonus eaten" &&
-  //       protocol[i].value === " break"
-  //     ) {
-  //       breakBonusIndex = i;
-  //       break; // Найдена запись, выходим из цикла
-  //     }
-  //   }
-  //   if (breakBonusIndex !== -1) {
-  //     // Шаг 3: Создать копию протокола событий с конца массива до найденной позиции
-  //     const copiedProtocol = protocol.slice(breakBonusIndex + 1);
-  //     // Шаг 4: Найти записи с event.event === "food eaten" в копии
-  //     const foodEatenEvents = copiedProtocol.filter(
-  //       (event) => event.event === "food eaten"
-  //     );
-  //     // Шаг 5: Если есть две записи с event.event === "food eaten", установить isObstaclesBroken в false
-  //     if (foodEatenEvents.length >= 2) {
-  //       isObstaclesBroken = false;
-  //       console.log(foodEatenEvents);
-  //     }
-  //   }
-  // }
-  // // проверка продолжительности бонуса заморозки еды
-  // if (isFoodEatRise === false) {
-  //   let bonusFoodFreeze = -1;
-  //   for (let i = protocol.length - 1; i >= 0; i--) {
-  //     if (
-  //       protocol[i].event === "bonus eaten" &&
-  //       protocol[i].value === " foodFreeze"
-  //     ) {
-  //       bonusFoodFreeze = i;
-  //       break;
-  //     }
-  //   }
-  //   if (bonusFoodFreeze !== -1) {
-  //     const copiedProtocol = protocol.slice(bonusFoodFreeze + 1);
-  //     const foodEatenEvent = copiedProtocol.filter(
-  //       (event) => event.event === "food eaten"
-  //     );
-  //     if (foodEatenEvent.length >= 2) {
-  //       isFoodEatRise = true;
-  //     }
-  //   }
-  // }
-  function findLastEventIndex(protocol, eventName, eventValue) {
-    let lastIndex = -1;
-    for (let i = protocol.length - 1; i >= 0; i--) {
-      if (protocol[i].event === eventName && protocol[i].value === eventValue) {
-        lastIndex = i;
-        break;
-      }
-    }
-    return lastIndex;
-  }
 
   if (isObstaclesBroken === true) {
     const breakBonusIndex = findLastEventIndex(
@@ -283,6 +238,22 @@ const counter = () => {
       );
       if (foodEatenEvent.length >= 2) {
         isFoodEatRise = true;
+      }
+    }
+  }
+  if (isBreakWallActive === true) {
+    const bonusBreakWall = findLastEventIndex(
+      protocol,
+      "bonus eaten",
+      " breakWall"
+    );
+    if (bonusBreakWall !== -1) {
+      const copiedProtocol = protocol.slice(bonusBreakWall + 1);
+      const foodEatenEvent = copiedProtocol.filter(
+        (event) => event.event === "food eaten"
+      );
+      if (foodEatenEvent.length >= 2) {
+        isBreakWallActive = false;
       }
     }
   }
@@ -403,6 +374,7 @@ const timer = () => {
     с учетом всех текущих изменений
   */
 const render = () => {
+  console.log(snakeBody);
   playBoard.style.gridTemplate = `repeat(${field}, 1fr) / repeat(${field}, 1fr)`;
   // первой создается голова змейки
   screen = `<div class="head" style="grid-area: ${snakeBody[0][1]} / ${snakeBody[0][0]}"></div>`;
@@ -499,10 +471,26 @@ const checkingRestrictions = () => {
           brokenObstacle.name = "F";
         }
     }
+
     // проверка соприкосновения с границами поля
-    if (snakeX <= 0 || snakeX > field || snakeY <= 0 || snakeY > field) {
+
+    if (
+      (snakeX <= 0 || snakeX > field || snakeY <= 0 || snakeY > field) &&
+      !isBreakWallActive
+    ) {
       setEvent("life lost", "border " + snakeX + ":" + snakeY + " contact");
+    } else {
+      if (snakeX < 0) {
+        snakeX = field + 1;
+      } else if (snakeX > field) {
+        snakeX = 0;
+      } else if (snakeY < 0) {
+        snakeY = field + 1;
+      } else if (snakeY > field) {
+        snakeY = 0;
+      }
     }
+
     // проверка соприкосновения змейки с самой собой
     for (let i = 0; i < snakeBody.length; i++) {
       if (
@@ -585,6 +573,9 @@ const protocolExecutor = () => {
             break;
           case "foodFreeze":
             isFoodEatRise = false;
+            break;
+          case "breakWall":
+            isBreakWallActive = true;
             break;
         }
       }
@@ -676,6 +667,7 @@ const protocolExecutor = () => {
       for (let i = 1; i < snakeLength; i++) snakeBody.push([snakeX - i, 1]);
       isTime = false;
       break;
+
     case "level continue":
       isMistake = false;
       break;
