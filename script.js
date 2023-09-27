@@ -37,7 +37,7 @@ const levels = [
   {
     field: 30,
     time: 60000,
-    timeStep: 500,
+    timeStep: 125,
     food: 10,
     snakeLives: 3,
     obstacles: ["fix", "x", "y"],
@@ -91,7 +91,8 @@ let timeStep;
 let time = 0;
 const protocol = [];
 let obstacleSpeed = 0;
-let obstacleStep = [];
+let obstacleStepX = [];
+let obstacleStepY = [];
 let obstaclesX = [];
 let obstaclesY = [];
 let obstaclesF = [];
@@ -148,9 +149,11 @@ const setLevel = () => {
   obstaclesX = levels[level - 1].obstacles.filter(
     (obstacle) => obstacle === "x"
   );
+  obstacleStepX = obstaclesX.map((obstacle) => 1);
   obstaclesY = levels[level - 1].obstacles.filter(
     (obstacle) => obstacle === "y"
   );
+  obstacleStepY = obstaclesY.map((obstacle) => 1);
   obstaclesF = levels[level - 1].obstacles.filter(
     (obstacle) => obstacle === "fix"
   );
@@ -302,12 +305,13 @@ const setObstaclePosition = (type) => {
 
 const moveObstacle = (direction) => {
   const obstacles = direction === "x" ? obstaclesX.slice() : obstaclesY.slice();
+  const obstacleStep =
+    direction === "x" ? obstacleStepX.slice() : obstacleStepY.slice();
   obstacleSpeed += timeStep;
   if (obstacleSpeed / timeStep === 5) {
     if (isTime) {
       const index = direction === "x" ? 0 : 1;
       for (let i = 0; i < obstacles.length; i++) {
-        obstacleStep.push(1);
         if (obstacles[i][index] === field) {
           obstacleStep[i] = -1;
         }
@@ -321,7 +325,7 @@ const moveObstacle = (direction) => {
     obstacleSpeed = 0;
   }
 
-  return obstacles;
+  return [obstacles, obstacleStep];
 };
 
 const setBonusPosition = () => {
@@ -617,8 +621,8 @@ const protocolExecutor = () => {
         // перемещение змейки по игровому полю
         moveSnake();
         // перемещение препятствий
-        obstaclesX = moveObstacle("x");
-        obstaclesY = moveObstacle("y");
+        [obstaclesX, obstacleStepX] = moveObstacle("x");
+        [obstaclesY, obstacleStepY] = moveObstacle("y");
         // проверка доступных игроку взаимодействий
         checkingInteractions();
         // проверка всех предусмотренных игрой ограничений
