@@ -374,7 +374,6 @@ const timer = () => {
     с учетом всех текущих изменений
   */
 const render = () => {
-  console.log(snakeBody);
   playBoard.style.gridTemplate = `repeat(${field}, 1fr) / repeat(${field}, 1fr)`;
   // первой создается голова змейки
   screen = `<div class="head" style="grid-area: ${snakeBody[0][1]} / ${snakeBody[0][0]}"></div>`;
@@ -384,7 +383,7 @@ const render = () => {
   // второй создается еда
   screen += `<div class="food" style="grid-area: ${foodY} / ${foodX}"></div>`;
   // третьим создается препятствие
-  // console.log(obstaclesF);
+
   for (let i = 0; i < obstaclesF.length; i++)
     screen += `<div class="obstacle" style="grid-area: ${obstaclesF[i][1]} / ${obstaclesF[i][0]}"></div>`;
   for (let i = 0; i < obstaclesX.length; i++)
@@ -700,3 +699,42 @@ setLevel();
 protocolExecutor();
 
 document.addEventListener("keydown", changeDirection);
+
+var movements = [];
+
+function handleKeyPress(event) {
+  var currentTime = new Date();
+  var minutes = currentTime.getMinutes();
+  var seconds = currentTime.getSeconds();
+  var milliseconds = currentTime.getMilliseconds();
+
+  var formattedTime =
+    (minutes < 10 ? "0" : "") +
+    minutes +
+    ":" +
+    (seconds < 10 ? "0" : "") +
+    seconds +
+    "." +
+    (milliseconds < 100 ? "0" : "") +
+    (milliseconds < 10 ? "0" : "") +
+    milliseconds;
+
+  switch (event.keyCode) {
+    case 37:
+      movements.push(formattedTime + " - ArrowLeft");
+      break;
+    case 38:
+      movements.push(formattedTime + " - ArrowUp");
+      break;
+    case 39:
+      movements.push(formattedTime + " - ArrowRight");
+      break;
+    case 40:
+      movements.push(formattedTime + " - ArrowDown");
+      break;
+  }
+}
+
+document.addEventListener("keydown", handleKeyPress);
+
+console.log(movements);
