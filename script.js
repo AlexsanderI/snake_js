@@ -54,6 +54,7 @@ const changeDirection = (e) => {
     protocol.push({ time: time, move: "X", step: 1, event: "" });
   }
   initGame();
+  console.log(snakeBody);
 };
 
 controls.forEach((key) => {
@@ -125,8 +126,8 @@ const initGame = (timeStep) => {
 changeFoodPosition();
 setObstaclePosition();
 initGame();
-setIntervalId = setInterval(() => {
-  initGame(timeStep);
-  time = time + timeStep;
-}, timeStep);
+// setIntervalId = setInterval(() => {
+//   initGame(timeStep);
+//   time = time + timeStep;
+// }, timeStep);
 document.addEventListener("keydown", changeDirection);
