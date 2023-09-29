@@ -110,6 +110,7 @@ const setEvent = (newEvent, newValue) => {
     newRecord.event === "level is complete"
   )
     isTime = false;
+  protocolExecutor();
 };
 
 const getFreeCell = (bookedCells) => {
@@ -344,18 +345,23 @@ const changeDirection = (e) => {
   if (isRender) {
     const { event } = protocol[protocol.length - 1];
     let newEvent;
+    let newValue;
     if (e.key === "ArrowUp" && event !== "Y") {
-      newEvent = { time: time, event: "Y", value: -1 };
+      newEvent = "Y";
+      newValue = -1;
     } else if (e.key === "ArrowDown" && event !== "Y") {
-      newEvent = { time: time, event: "Y", value: 1 };
+      newEvent = "Y";
+      newValue = 1;
     } else if (e.key === "ArrowLeft" && event !== "X") {
-      newEvent = { time: time, event: "X", value: -1 };
+      newEvent = "X";
+      newValue = -1;
     } else if (e.key === "ArrowRight" && event !== "X") {
-      newEvent = { time: time, event: "X", value: 1 };
+      newEvent = "X";
+      newValue = 1;
     } else {
       return;
     }
-    if (isTime || !isMistake || time === 0) protocol.push(newEvent);
+    if (isTime || !isMistake || time === 0) setEvent(newEvent, newValue);
     isTime = true;
   }
   isRender = false;
@@ -417,7 +423,7 @@ const render = () => {
 
 const checkingRestrictions = () => {
   if (isTime && isRender) {
-    // проверка соприкосновения с препятствиями
+    // проверка соприкосновения змейки с препятствиями
     if (!isObstaclesBroken) {
       for (let i = 0; i < obstaclesX.length; i++)
         if (snakeX === obstaclesX[i][0] && snakeY === obstaclesX[i][1]) {
@@ -629,7 +635,6 @@ const protocolExecutor = () => {
         checkingInteractions();
         // проверка всех предусмотренных игрой ограничений
         checkingRestrictions();
-        protocolExecutor();
         counter();
         // вывод текущего изображения игры
         render();
