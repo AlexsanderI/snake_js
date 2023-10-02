@@ -37,7 +37,7 @@ const levels = [
   {
     field: 30,
     time: 60000,
-    timeStep: 125,
+    timeStep: 300,
     food: 10,
     snakeLives: 3,
     obstacles: ["fix", "x", "y"],
