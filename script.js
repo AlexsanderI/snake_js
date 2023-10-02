@@ -37,7 +37,7 @@ const levels = [
   {
     field: 30,
     time: 60000,
-    timeStep: 125,
+    timeStep: 300,
     food: 10,
     snakeLives: 3,
     obstacles: ["fix", "x", "y"],
@@ -422,7 +422,7 @@ const render = () => {
 */
 
 const checkingRestrictions = () => {
-  if (isTime && isRender) {
+  if (isTime) {
     // проверка соприкосновения змейки с препятствиями
     if (!isObstaclesBroken) {
       for (let i = 0; i < obstaclesX.length; i++)
