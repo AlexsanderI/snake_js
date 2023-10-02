@@ -48,7 +48,7 @@ const levels = [
       // { type: "time", value: 20000, startFood: 4 },
       // { type: "break", value: "", startFood: 4 },
       // { type: "points", value: 10, startFood: 4 },
-      { type: "lives", value: 20, startFood: 4 },
+      { type: "lives", value: 20, startFood: 7 },
     ],
     maxScores: 39,
   },
@@ -92,7 +92,9 @@ let time = 0;
 const protocol = [];
 let obstacleSpeed = 0;
 let obstacleStepX = [];
+let obstacleStopX = [];
 let obstacleStepY = [];
+let obstacleStopY = [];
 let obstaclesX = [];
 let obstaclesY = [];
 let obstaclesF = [];
@@ -151,6 +153,7 @@ const setLevel = () => {
     (obstacle) => obstacle === "x"
   );
   obstacleStepX = obstaclesX.map((obstacle) => 1);
+  obstacleStopX = obstaclesX.map((obstacle) => "move");
   obstaclesY = levels[level - 1].obstacles.filter(
     (obstacle) => obstacle === "y"
   );
@@ -308,6 +311,8 @@ const moveObstacle = (direction) => {
   const obstacles = direction === "x" ? obstaclesX.slice() : obstaclesY.slice();
   const obstacleStep =
     direction === "x" ? obstacleStepX.slice() : obstacleStepY.slice();
+  let obstacleStop =
+    direction === "x" ? obstacleStopX.slice() : obstacleStopY.slice();
   obstacleSpeed += timeStep;
   if (obstacleSpeed / timeStep === 5) {
     if (isTime) {
@@ -320,13 +325,14 @@ const moveObstacle = (direction) => {
         if (obstacles[i][index] === 1) {
           obstacleStep[i] = 1;
         }
-        obstacles[i][index] += obstacleStep[i];
+        obstacles[i][index] += obstacleStop[i] === "move" ? obstacleStep[i] : 0;
       }
     }
     obstacleSpeed = 0;
   }
+  obstacleStop = obstacleStop.map((obstacle) => "move");
 
-  return [obstacles, obstacleStep];
+  return [obstacles, obstacleStep, obstacleStop];
 };
 
 const setBonusPosition = () => {
@@ -425,13 +431,24 @@ const checkingRestrictions = () => {
   if (isTime && isRender) {
     // проверка соприкосновения змейки с препятствиями
     if (!isObstaclesBroken) {
-      for (let i = 0; i < obstaclesX.length; i++)
+      for (let i = 0; i < obstaclesX.length; i++) {
+        if (
+          // stepY === 0 &&
+          // stepX === -obstacleStepX[i] &&
+          snakeY === obstaclesX[i][1] &&
+          Math.abs(obstaclesX[i][0] - snakeX) < 3
+        ) {
+          console.log(Math.abs(obstaclesX[i][0] - snakeX));
+          obstacleStopX[i] = "stop";
+        }
+
         if (snakeX === obstaclesX[i][0] && snakeY === obstaclesX[i][1]) {
           setEvent(
             "life lost",
             "obstacle " + obstaclesX[i][0] + ":" + obstaclesX[i][1] + " contact"
           );
         }
+      }
 
       for (let i = 0; i < obstaclesY.length; i++)
         if (snakeX === obstaclesY[i][0] && snakeY === obstaclesY[i][1]) {
@@ -628,11 +645,13 @@ const protocolExecutor = () => {
       setIntervalId = setInterval(() => {
         // перемещение змейки по игровому полю
         moveSnake();
+
         // перемещение препятствий
-        [obstaclesX, obstacleStepX] = moveObstacle("x");
-        [obstaclesY, obstacleStepY] = moveObstacle("y");
+        [obstaclesX, obstacleStepX, obstacleStopX] = moveObstacle("x");
+        [obstaclesY, obstacleStepY, obstacleStopY] = moveObstacle("y");
         // проверка доступных игроку взаимодействий
         checkingInteractions();
+
         // проверка всех предусмотренных игрой ограничений
         checkingRestrictions();
         counter();
