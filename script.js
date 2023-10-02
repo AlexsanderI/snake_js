@@ -428,7 +428,7 @@ const render = () => {
 */
 
 const checkingRestrictions = () => {
-  if (isTime && isRender) {
+  if (isTime) {
     // проверка соприкосновения змейки с препятствиями
     if (!isObstaclesBroken) {
       for (let i = 0; i < obstaclesX.length; i++) {
