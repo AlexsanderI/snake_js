@@ -40,7 +40,7 @@ const levels = [
     timeStep: 300,
     food: 10,
     snakeLives: 3,
-    obstacles: ["fix", "x", "y"],
+    obstacles: ["y"],
     bonuses: [
       { type: "breakWall", value: "", startFood: 1 },
       { type: "foodFreeze", value: "", startFood: 4 },
@@ -429,6 +429,7 @@ const render = () => {
 */
 
 const checkingRestrictions = () => {
+  const stopDistance = 2;
   if (isTime) {
     // проверка соприкосновения змейки с препятствиями
     if (!isObstaclesBroken) {
@@ -437,8 +438,8 @@ const checkingRestrictions = () => {
           // stepY === 0 &&
           // stepX === -obstacleStepX[i] &&
           // snakeY === obstaclesX[i][1] &&
-          Math.abs(obstaclesX[i][1] - snakeY) < 3 &&
-          Math.abs(obstaclesX[i][0] - snakeX) < 3
+          Math.abs(obstaclesX[i][1] - snakeY) < stopDistance ||
+          Math.abs(obstaclesX[i][0] - snakeX) < stopDistance
         )
           obstacleStopX[i] = "stop";
 
@@ -454,10 +455,11 @@ const checkingRestrictions = () => {
           // stepX === 0 &&
           // stepY === -obstacleStepY[i] &&
           // snakeX === obstaclesY[i][0] &&
-          Math.abs(obstaclesX[i][0] - snakeX) < 3 &&
-          Math.abs(obstaclesY[i][1] - snakeY) < 3
+          Math.abs(obstaclesY[i][0] - snakeX) < stopDistance &&
+          Math.abs(obstaclesY[i][1] - snakeY) < stopDistance
         )
           obstacleStopY[i] = "stop";
+
         if (snakeX === obstaclesY[i][0] && snakeY === obstaclesY[i][1]) {
           setEvent(
             "life lost",
