@@ -434,9 +434,10 @@ const checkingRestrictions = () => {
     if (!isObstaclesBroken) {
       for (let i = 0; i < obstaclesX.length; i++) {
         if (
-          stepY === 0 &&
-          stepX === -obstacleStepX[i] &&
-          snakeY === obstaclesX[i][1] &&
+          // stepY === 0 &&
+          // stepX === -obstacleStepX[i] &&
+          // snakeY === obstaclesX[i][1] &&
+          Math.abs(obstaclesX[i][1] - snakeY) < 3 &&
           Math.abs(obstaclesX[i][0] - snakeX) < 3
         )
           obstacleStopX[i] = "stop";
@@ -450,9 +451,10 @@ const checkingRestrictions = () => {
       }
       for (let i = 0; i < obstaclesY.length; i++) {
         if (
-          stepX === 0 &&
-          stepY === -obstacleStepY[i] &&
-          snakeX === obstaclesY[i][0] &&
+          // stepX === 0 &&
+          // stepY === -obstacleStepY[i] &&
+          // snakeX === obstaclesY[i][0] &&
+          Math.abs(obstaclesX[i][0] - snakeX) < 3 &&
           Math.abs(obstaclesY[i][1] - snakeY) < 3
         )
           obstacleStopY[i] = "stop";
