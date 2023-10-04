@@ -40,7 +40,7 @@ const levels = [
     timeStep: 300,
     food: 10,
     snakeLives: 3,
-    obstacles: ["y"],
+    obstacles: ["fix", "x", "y"],
     bonuses: [
       { type: "breakWall", value: "", startFood: 1 },
       { type: "foodFreeze", value: "", startFood: 4 },
@@ -429,16 +429,13 @@ const render = () => {
 */
 
 const checkingRestrictions = () => {
-  const stopDistance = 2;
+  const stopDistance = 3;
   if (isTime) {
     // проверка соприкосновения змейки с препятствиями
     if (!isObstaclesBroken) {
       for (let i = 0; i < obstaclesX.length; i++) {
         if (
-          // stepY === 0 &&
-          // stepX === -obstacleStepX[i] &&
-          // snakeY === obstaclesX[i][1] &&
-          Math.abs(obstaclesX[i][1] - snakeY) < stopDistance ||
+          Math.abs(obstaclesX[i][1] - snakeY) < stopDistance &&
           Math.abs(obstaclesX[i][0] - snakeX) < stopDistance
         )
           obstacleStopX[i] = "stop";
@@ -452,9 +449,6 @@ const checkingRestrictions = () => {
       }
       for (let i = 0; i < obstaclesY.length; i++) {
         if (
-          // stepX === 0 &&
-          // stepY === -obstacleStepY[i] &&
-          // snakeX === obstaclesY[i][0] &&
           Math.abs(obstaclesY[i][0] - snakeX) < stopDistance &&
           Math.abs(obstaclesY[i][1] - snakeY) < stopDistance
         )
