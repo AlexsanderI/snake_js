@@ -36,13 +36,13 @@ const levels = [
   // },
   {
     field: 30,
-    time: 60000,
-    timeStep: 300,
+    time: 300000,
+    timeStep: 125,
     food: 10,
-    snakeLives: 3,
-    obstacles: ["fix", "x", "y"],
+    snakeLives: 10,
+    obstacles: ["x", "y", "x", "y", "x", "y", "x", "y", "x", "y", "x", "y"],
     bonuses: [
-      { type: "breakWall", value: "", startFood: 1 },
+      { type: "breakWall", value: "", startFood: 0 },
       { type: "foodFreeze", value: "", startFood: 4 },
       // { type: "break", value: "", startFood: 1 }, // value порядковый номер type: "break"
       // { type: "time", value: 20000, startFood: 4 },
@@ -309,24 +309,32 @@ const setObstaclePosition = (type) => {
 };
 
 const moveObstacle = (direction) => {
+  let contact = false;
   const obstacles = direction === "x" ? obstaclesX.slice() : obstaclesY.slice();
   const obstacleStep =
     direction === "x" ? obstacleStepX.slice() : obstacleStepY.slice();
+
   let obstacleStop =
     direction === "x" ? obstacleStopX.slice() : obstacleStopY.slice();
   obstacleSpeed += timeStep;
   if (obstacleSpeed / timeStep === 5) {
     if (isTime) {
-      const index = direction === "x" ? 0 : 1;
+      const index = direction === "x" ? [0, 1] : [1, 0];
       for (let i = 0; i < obstacles.length; i++) {
-        if (obstacles[i][index] === field) {
-          obstacleStep[i] = -1;
-        }
-
-        if (obstacles[i][index] === 1) {
-          obstacleStep[i] = 1;
-        }
-        obstacles[i][index] += obstacleStop[i] === "move" ? obstacleStep[i] : 0;
+        let fieldMinContact = obstacles[i][index[0]] === 1;
+        let fieldMaxContact = obstacles[i][index[0]] === field;
+        let bonusContact =
+          direction === "x"
+            ? Math.abs(obstacles[i][index[0]] - bonusX) < 2 &&
+              Math.abs(obstacles[i][index[1]] - bonusY) < 1
+            : Math.abs(obstacles[i][index[0]] - bonusY) < 2 &&
+              Math.abs(obstacles[i][index[1]] - bonusX) < 1;
+        if (fieldMaxContact) obstacleStep[i] = -1;
+        if (fieldMinContact) obstacleStep[i] = 1;
+        if (bonusContact && !isBonusEaten && isBonusShow)
+          obstacleStep[i] = obstacleStep[i] * -1;
+        obstacles[i][index[0]] +=
+          obstacleStop[i] === "move" ? obstacleStep[i] : 0;
       }
     }
     obstacleSpeed = 0;
@@ -608,6 +616,8 @@ const protocolExecutor = () => {
             break;
         }
       }
+      // bonusX = -1;
+      // bonusY = -1;
       break;
     case "obstacles is broken":
       switch (brokenObstacle.name) {
