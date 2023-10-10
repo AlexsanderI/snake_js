@@ -24,34 +24,34 @@ function findLastEventIndex(protocol, eventName, eventValue) {
 }
 
 const levels = [
-  // {
-  //   field: 15,
-  //   time: 15000,
-  //   timeStep: 250,
-  //   food: 2,
-  //   snakeLives: 2,
-  //   obstacles: [],
-  //   bonuses: [],
-  //   maxScores: 2,
-  // },
   {
-    field: 30,
-    time: 300000,
-    timeStep: 125,
-    food: 10,
-    snakeLives: 10,
-    obstacles: ["x", "y", "x", "y", "x", "y", "x", "y", "x", "y", "x", "y"],
-    bonuses: [
-      { type: "breakWall", value: "", startFood: 0 },
-      { type: "foodFreeze", value: "", startFood: 4 },
-      // { type: "break", value: "", startFood: 1 }, // value порядковый номер type: "break"
-      // { type: "time", value: 20000, startFood: 4 },
-      // { type: "break", value: "", startFood: 4 },
-      // { type: "points", value: 10, startFood: 4 },
-      { type: "lives", value: 20, startFood: 4 },
-    ],
-    maxScores: 39,
+    field: 3,
+    time: 15000,
+    timeStep: 250,
+    food: 2,
+    snakeLives: 2,
+    obstacles: ["fix", "fix", "fix"],
+    bonuses: [{ type: "breakWall", value: "", startFood: 0 }],
+    maxScores: 2,
   },
+  // {
+  //   field: 30,
+  //   time: 300000,
+  //   timeStep: 125,
+  //   food: 10,
+  //   snakeLives: 10,
+  //   obstacles: ["x", "y", "x", "y", "x", "y", "x", "y", "x", "y", "x", "y"],
+  //   bonuses: [
+  //     { type: "breakWall", value: "", startFood: 0 },
+  //     { type: "foodFreeze", value: "", startFood: 4 },
+  //     // { type: "break", value: "", startFood: 1 }, // value порядковый номер type: "break"
+  //     // { type: "time", value: 20000, startFood: 4 },
+  //     // { type: "break", value: "", startFood: 4 },
+  //     // { type: "points", value: 10, startFood: 4 },
+  //     { type: "lives", value: 20, startFood: 4 },
+  //   ],
+  //   maxScores: 39,
+  // },
 ];
 const maxLevel = levels.length;
 let level = 1;
@@ -273,7 +273,9 @@ const setFoodPosition = () => {
   */
   let copySnake = snakeBody.slice();
   if (currentFood !== foodLevel - 1) {
-    [foodX, foodY] = getFreeCell(copySnake.concat(obstacles));
+    [foodX, foodY] = getFreeCell(
+      copySnake.concat(obstaclesF, obstaclesX, obstaclesY)
+    );
     setEvent("set food", foodX + ":" + foodY);
   }
 };
@@ -348,7 +350,9 @@ const setBonusPosition = () => {
   Алгоритм генерации координат бонусов с учетом движущихся препятствий:
   */
   let copySnake = snakeBody.slice();
-  [bonusX, bonusY] = getFreeCell(copySnake.concat(obstacles, [foodX, foodY]));
+  [bonusX, bonusY] = getFreeCell(
+    copySnake.concat(obstaclesF, obstaclesX, obstaclesY, [[foodX, foodY]])
+  );
   setEvent(
     `set ${levels[level - 1].bonuses[currentBonus].type} bonus`,
     bonusX + ":" + bonusY
