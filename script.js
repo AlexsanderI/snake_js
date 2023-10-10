@@ -309,7 +309,6 @@ const setObstaclePosition = (type) => {
 };
 
 const moveObstacle = (direction) => {
-  let contact = false;
   const obstacles = direction === "x" ? obstaclesX.slice() : obstaclesY.slice();
   const obstacleStep =
     direction === "x" ? obstacleStepX.slice() : obstacleStepY.slice();
