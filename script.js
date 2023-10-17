@@ -40,7 +40,20 @@ const levels = [
     timeStep: 125,
     food: ["f", "m", "f", "f", "f", "f", "f", "f"],
     snakeLives: 10,
-    obstacles: ["fix", "fix", "fix", "fix", "x", "y"],
+    obstacles: [
+      "fix",
+      "fix",
+      "fix",
+      "fix",
+      "fix",
+      "fix",
+      "fix",
+      "fix",
+      "fix",
+      "fix",
+      "x",
+      "y",
+    ],
     bonuses: [
       { type: "breakWall", value: "", startFood: 0 },
       { type: "foodFreeze", value: "", startFood: 4 },
@@ -267,57 +280,61 @@ const counter = () => {
   }
 };
 
-// const setFoodPosition = () => {
-//   /*
-//   Алгоритм генерации координат еды с учетом движущихся препятствий:
-//   */
-//   let copySnake = snakeBody.slice();
-//   if (currentFood !== foodLevel - 1) {
-//     [foodX, foodY] = getFreeCell(
-//       copySnake.concat(obstaclesF, obstaclesX, obstaclesY)
-//     );
-//     setEvent("set food", foodX + ":" + foodY);
-//   }
-// };
 const setFoodPosition = () => {
-  // Find the current position of the moving food item
-  let currentIndex = currentFood % foodLevel;
-  let currentFoodType = levels[level - 1].food[currentIndex];
+  // let currentIndex = currentFood % foodLevel;
+  // let currentFoodType = levels[level - 1].food[currentIndex];
+  const foodType = levels[level - 1].food[currentFood];
+  console.log(foodType);
+  /*
+  Алгоритм генерации координат еды с учетом движущихся препятствий:
+  */
   let copySnake = snakeBody.slice();
-  console.log(currentFoodType);
-  if (currentFoodType === "m") {
-    // Logic for moving food (m)
-    if (stepX !== 0 && stepY !== 0) {
-      // If snake is moving diagonally
-      if (Math.random() < 1) {
-        // Move the food item diagonally
-        foodX += stepX;
-        foodY += stepY;
-      } else {
-        // Move the food item only in one direction
-        if (Math.random() < 1) {
-          foodX += stepX;
-        } else {
-          foodY += stepY;
-        }
-      }
-    } else {
-      // If snake is not moving diagonally, move food randomly
-      if (Math.random() < 1) {
-        foodX += stepX;
-      } else {
-        foodY += stepY;
-      }
-    }
-  } else {
-    // If the food type is 'f' (fixed), just find a free cell
+  if (currentFood !== foodLevel - 1) {
     [foodX, foodY] = getFreeCell(
       copySnake.concat(obstaclesF, obstaclesX, obstaclesY)
     );
+    setEvent("set food", foodX + ":" + foodY);
   }
-
-  setEvent("set food", foodX + ":" + foodY);
 };
+// const setFoodPosition = () => {
+//   // Find the current position of the moving food item
+//   let currentIndex = currentFood % foodLevel;
+//   let currentFoodType = levels[level - 1].food[currentIndex];
+//   let copySnake = snakeBody.slice();
+//   console.log(currentFoodType);
+//   if (currentFoodType === "m") {
+//     // Logic for moving food (m)
+//     if (stepX !== 0 && stepY !== 0) {
+//       // If snake is moving diagonally
+//       if (Math.random() < 1) {
+//         // Move the food item diagonally
+//         foodX += stepX;
+//         foodY += stepY;
+//       } else {
+//         // Move the food item only in one direction
+//         if (Math.random() < 1) {
+//           foodX += stepX;
+//         } else {
+//           foodY += stepY;
+//         }
+//       }
+//     } else {
+//       // If snake is not moving diagonally, move food randomly
+//       if (Math.random() < 1) {
+//         foodX += stepX;
+//       } else {
+//         foodY += stepY;
+//       }
+//     }
+//   } else {
+//     // If the food type is 'f' (fixed), just find a free cell
+//     [foodX, foodY] = getFreeCell(
+//       copySnake.concat(obstaclesF, obstaclesX, obstaclesY)
+//     );
+//   }
+
+//   setEvent("set food", foodX + ":" + foodY);
+// };
 
 const setObstaclePosition = (type) => {
   /*
