@@ -24,34 +24,34 @@ function findLastEventIndex(protocol, eventName, eventValue) {
 }
 
 const levels = [
-  {
-    field: 3,
-    time: 15000,
-    timeStep: 250,
-    food: 2,
-    snakeLives: 2,
-    obstacles: ["fix", "fix", "fix"],
-    bonuses: [{ type: "breakWall", value: "", startFood: 0 }],
-    maxScores: 2,
-  },
   // {
-  //   field: 30,
-  //   time: 300000,
-  //   timeStep: 125,
-  //   food: 10,
-  //   snakeLives: 10,
-  //   obstacles: ["x", "y", "x", "y", "x", "y", "x", "y", "x", "y", "x", "y"],
-  //   bonuses: [
-  //     { type: "breakWall", value: "", startFood: 0 },
-  //     { type: "foodFreeze", value: "", startFood: 4 },
-  //     // { type: "break", value: "", startFood: 1 }, // value порядковый номер type: "break"
-  //     // { type: "time", value: 20000, startFood: 4 },
-  //     // { type: "break", value: "", startFood: 4 },
-  //     // { type: "points", value: 10, startFood: 4 },
-  //     { type: "lives", value: 20, startFood: 4 },
-  //   ],
-  //   maxScores: 39,
+  //   field: 3,
+  //   time: 15000,
+  //   timeStep: 250,
+  //   food: 2,
+  //   snakeLives: 2,
+  //   obstacles: ["fix", "fix", "fix"],
+  //   bonuses: [{ type: "breakWall", value: "", startFood: 0 }],
+  //   maxScores: 2,
   // },
+  {
+    field: 30,
+    time: 300000,
+    timeStep: 125,
+    food: ["f", "m", "f", "f", "f", "f", "f", "f"],
+    snakeLives: 10,
+    obstacles: ["fix", "fix", "fix", "fix", "x", "y"],
+    bonuses: [
+      { type: "breakWall", value: "", startFood: 0 },
+      { type: "foodFreeze", value: "", startFood: 4 },
+      // { type: "break", value: "", startFood: 1 }, // value порядковый номер type: "break"
+      // { type: "time", value: 20000, startFood: 4 },
+      // { type: "break", value: "", startFood: 4 },
+      // { type: "points", value: 10, startFood: 4 },
+      { type: "lives", value: 20, startFood: 4 },
+    ],
+    maxScores: 39,
+  },
 ];
 const maxLevel = levels.length;
 let level = 1;
@@ -144,7 +144,7 @@ const setLevel = () => {
   time = 0;
   protocol.push({ time: time, event: "start level", value: level });
   field = levels[level - 1].field;
-  foodLevel = levels[level - 1].food;
+  foodLevel = levels[level - 1].food.length;
   levelTime = levels[level - 1].time + extraTime;
   timeStep = levels[level - 1].timeStep;
   maxScores = levels[level - 1].maxScores;
@@ -267,17 +267,56 @@ const counter = () => {
   }
 };
 
+// const setFoodPosition = () => {
+//   /*
+//   Алгоритм генерации координат еды с учетом движущихся препятствий:
+//   */
+//   let copySnake = snakeBody.slice();
+//   if (currentFood !== foodLevel - 1) {
+//     [foodX, foodY] = getFreeCell(
+//       copySnake.concat(obstaclesF, obstaclesX, obstaclesY)
+//     );
+//     setEvent("set food", foodX + ":" + foodY);
+//   }
+// };
 const setFoodPosition = () => {
-  /*
-  Алгоритм генерации координат еды с учетом движущихся препятствий:
-  */
+  // Find the current position of the moving food item
+  let currentIndex = currentFood % foodLevel;
+  let currentFoodType = levels[level - 1].food[currentIndex];
   let copySnake = snakeBody.slice();
-  if (currentFood !== foodLevel - 1) {
+  console.log(currentFoodType);
+  if (currentFoodType === "m") {
+    // Logic for moving food (m)
+    if (stepX !== 0 && stepY !== 0) {
+      // If snake is moving diagonally
+      if (Math.random() < 1) {
+        // Move the food item diagonally
+        foodX += stepX;
+        foodY += stepY;
+      } else {
+        // Move the food item only in one direction
+        if (Math.random() < 1) {
+          foodX += stepX;
+        } else {
+          foodY += stepY;
+        }
+      }
+    } else {
+      // If snake is not moving diagonally, move food randomly
+      if (Math.random() < 1) {
+        foodX += stepX;
+      } else {
+        foodY += stepY;
+      }
+    }
+  } else {
+    // If the food type is 'f' (fixed), just find a free cell
     [foodX, foodY] = getFreeCell(
       copySnake.concat(obstaclesF, obstaclesX, obstaclesY)
     );
-    setEvent("set food", foodX + ":" + foodY);
   }
+
+  setEvent("set food", foodX + ":" + foodY);
 };
 
 const setObstaclePosition = (type) => {
@@ -330,10 +369,19 @@ const moveObstacle = (direction) => {
               Math.abs(obstacles[i][index[1]] - bonusY) < 1
             : Math.abs(obstacles[i][index[0]] - bonusY) < 2 &&
               Math.abs(obstacles[i][index[1]] - bonusX) < 1;
+        let fixObstacleContact = obstaclesF.some((obstacle) =>
+          direction === "x"
+            ? Math.abs(obstacles[i][index[0]] - obstacle[0]) < 2 &&
+              Math.abs(obstacles[i][index[1]] - obstacle[1]) < 1
+            : Math.abs(obstacles[i][index[0]] - obstacle[1]) < 2 &&
+              Math.abs(obstacles[i][index[1]] - obstacle[0]) < 1
+        );
+
         if (fieldMaxContact) obstacleStep[i] = -1;
         if (fieldMinContact) obstacleStep[i] = 1;
         if (bonusContact && !isBonusEaten && isBonusShow)
           obstacleStep[i] = obstacleStep[i] * -1;
+        if (fixObstacleContact) obstacleStep[i] = obstacleStep[i] * -1;
         obstacles[i][index[0]] +=
           obstacleStop[i] === "move" ? obstacleStep[i] : 0;
       }
