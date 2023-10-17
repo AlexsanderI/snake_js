@@ -24,34 +24,48 @@ function findLastEventIndex(protocol, eventName, eventValue) {
 }
 
 const levels = [
-  {
-    field: 3,
-    time: 15000,
-    timeStep: 250,
-    food: 2,
-    snakeLives: 2,
-    obstacles: ["fix", "fix", "fix"],
-    bonuses: [{ type: "breakWall", value: "", startFood: 0 }],
-    maxScores: 2,
-  },
   // {
-  //   field: 30,
-  //   time: 300000,
-  //   timeStep: 125,
-  //   food: 10,
-  //   snakeLives: 10,
-  //   obstacles: ["x", "y", "x", "y", "x", "y", "x", "y", "x", "y", "x", "y"],
-  //   bonuses: [
-  //     { type: "breakWall", value: "", startFood: 0 },
-  //     { type: "foodFreeze", value: "", startFood: 4 },
-  //     // { type: "break", value: "", startFood: 1 }, // value порядковый номер type: "break"
-  //     // { type: "time", value: 20000, startFood: 4 },
-  //     // { type: "break", value: "", startFood: 4 },
-  //     // { type: "points", value: 10, startFood: 4 },
-  //     { type: "lives", value: 20, startFood: 4 },
-  //   ],
-  //   maxScores: 39,
+  //   field: 3,
+  //   time: 15000,
+  //   timeStep: 250,
+  //   food: 2,
+  //   snakeLives: 2,
+  //   obstacles: ["fix", "fix", "fix"],
+  //   bonuses: [{ type: "breakWall", value: "", startFood: 0 }],
+  //   maxScores: 2,
   // },
+
+  {
+    field: 20,
+    time: 300000,
+    timeStep: 125,
+    food: 10,
+    snakeLives: 10,
+    obstacles: [
+      "fix",
+      "fix",
+      "fix",
+      "fix",
+      "fix",
+      "fix",
+      "fix",
+      "fix",
+      "fix",
+      "fix",
+      "x",
+      "y",
+    ],
+    bonuses: [
+      { type: "breakWall", value: "", startFood: 0 },
+      { type: "foodFreeze", value: "", startFood: 4 },
+      // { type: "break", value: "", startFood: 1 }, // value порядковый номер type: "break"
+      // { type: "time", value: 20000, startFood: 4 },
+      // { type: "break", value: "", startFood: 4 },
+      // { type: "points", value: 10, startFood: 4 },
+      { type: "lives", value: 20, startFood: 4 },
+    ],
+    maxScores: 39,
+  },
 ];
 const maxLevel = levels.length;
 let level = 1;
@@ -330,10 +344,19 @@ const moveObstacle = (direction) => {
               Math.abs(obstacles[i][index[1]] - bonusY) < 1
             : Math.abs(obstacles[i][index[0]] - bonusY) < 2 &&
               Math.abs(obstacles[i][index[1]] - bonusX) < 1;
+        let fixObstacleContact = obstaclesF.some((obstacle) =>
+          direction === "x"
+            ? Math.abs(obstacles[i][index[0]] - obstacle[0]) < 2 &&
+              Math.abs(obstacles[i][index[1]] - obstacle[1]) < 1
+            : Math.abs(obstacles[i][index[0]] - obstacle[1]) < 2 &&
+              Math.abs(obstacles[i][index[1]] - obstacle[0]) < 1
+        );
+
         if (fieldMaxContact) obstacleStep[i] = -1;
         if (fieldMinContact) obstacleStep[i] = 1;
         if (bonusContact && !isBonusEaten && isBonusShow)
           obstacleStep[i] = obstacleStep[i] * -1;
+        if (fixObstacleContact) obstacleStep[i] = obstacleStep[i] * -1;
         obstacles[i][index[0]] +=
           obstacleStop[i] === "move" ? obstacleStep[i] : 0;
       }
