@@ -39,7 +39,7 @@ const levels = [
     field: 20,
     time: 300000,
     timeStep: 125,
-    food: 10,
+    food: 2,
     snakeLives: 10,
     obstacles: [
       "fix",
@@ -426,13 +426,13 @@ const timer = () => {
   */
 const render = () => {
   playBoard.style.gridTemplate = `repeat(${field}, 1fr) / repeat(${field}, 1fr)`;
-  // первой создается голова змейки
-  screen = `<div class="head" style="grid-area: ${snakeBody[0][1]} / ${snakeBody[0][0]}"></div>`;
+  // первой создается еда
+  screen = `<div class="food" style="grid-area: ${foodY} / ${foodX}"></div>`;
+  // второй создается голова змейки
+  screen += `<div class="head" style="grid-area: ${snakeBody[0][1]} / ${snakeBody[0][0]}"></div>`;
   // к ней добавляется остальная часть, если она есть
   for (let i = 1; i < snakeBody.length; i++)
     screen += `<div class="head" style="grid-area: ${snakeBody[i][1]} / ${snakeBody[i][0]}"></div>`;
-  // второй создается еда
-  screen += `<div class="food" style="grid-area: ${foodY} / ${foodX}"></div>`;
   // третьим создается препятствие
   for (let i = 0; i < obstaclesF.length; i++)
     screen += `<div class="obstacle" style="grid-area: ${obstaclesF[i][1]} / ${obstaclesF[i][0]}"></div>`;
@@ -642,8 +642,6 @@ const protocolExecutor = () => {
             break;
         }
       }
-      // bonusX = -1;
-      // bonusY = -1;
       break;
     case "obstacles is broken":
       switch (brokenObstacle.name) {
@@ -687,13 +685,14 @@ const protocolExecutor = () => {
         // перемещение препятствий
         [obstaclesX, obstacleStepX, obstacleStopX] = moveObstacle("x");
         [obstaclesY, obstacleStepY, obstacleStopY] = moveObstacle("y");
-        // проверка доступных игроку взаимодействий
-        checkingInteractions();
+
         // проверка всех предусмотренных игрой ограничений
         checkingRestrictions();
         counter();
         // вывод текущего изображения игры
         render();
+        // проверка доступных игроку взаимодействий
+        checkingInteractions();
         // отсчет игрового времени
         timer();
       }, timeStep);
