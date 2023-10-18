@@ -36,25 +36,12 @@ const levels = [
   // },
 
   {
-    field: 20,
+    field: 10,
     time: 300000,
-    timeStep: 125,
-    food: 2,
+    timeStep: 250,
+    food: 1,
     snakeLives: 10,
-    obstacles: [
-      "fix",
-      "fix",
-      "fix",
-      "fix",
-      "fix",
-      "fix",
-      "fix",
-      "fix",
-      "fix",
-      "fix",
-      "x",
-      "y",
-    ],
+    obstacles: ["fix", "x", "y"],
     bonuses: [
       { type: "breakWall", value: "", startFood: 0 },
       { type: "foodFreeze", value: "", startFood: 4 },
@@ -117,6 +104,25 @@ let isObstaclesBroken = false;
 let brokenObstacle = {};
 let isFoodEatRise = true;
 let isBreakWallActive = false;
+
+const getCurrentFood = () => {
+  const currentLevelProtocolStart = protocol.findIndex(
+    (notice) => notice.event === "start level" && notice.value === level
+  );
+  currentFood = protocol
+    .slice(currentLevelProtocolStart)
+    .filter((notice) => notice.event === "food eaten").length;
+};
+
+const checkLevelComplete = () => {
+  leftToEat = foodLevel - currentFood;
+  if (leftToEat === 0) {
+    setEvent("level is complete", level);
+    extraTime = levelTime - time;
+    liveScores = snakeLives * 3;
+    isLevelComplete = true;
+  }
+};
 
 const setEvent = (newEvent, newValue) => {
   const newRecord = { time: time, event: newEvent, value: newValue };
@@ -183,19 +189,8 @@ const setLevel = () => {
 
 const counter = () => {
   // проверка генерации еды
-  const currentLevelProtocolStart = protocol.findIndex(
-    (notice) => notice.event === "start level" && notice.value === level
-  );
-  currentFood = protocol
-    .slice(currentLevelProtocolStart)
-    .filter((notice) => notice.event === "food eaten").length;
-  leftToEat = foodLevel - currentFood;
-  if (leftToEat === 0) {
-    setEvent("level is complete", level);
-    extraTime = levelTime - time;
-    liveScores = snakeLives * 3;
-    isLevelComplete = true;
-  }
+  getCurrentFood();
+  checkLevelComplete();
 
   // проверка генерации бонусов
   if (levels[level - 1].bonuses.length !== 0) {
@@ -464,6 +459,9 @@ const render = () => {
 
 const checkingRestrictions = () => {
   const stopDistance = 3;
+  // проверка генерации еды
+  getCurrentFood();
+  checkLevelComplete();
   if (isTime) {
     // проверка соприкосновения змейки с препятствиями
     if (!isObstaclesBroken) {
