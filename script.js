@@ -112,6 +112,7 @@ const getCurrentFood = () => {
   currentFood = protocol
     .slice(currentLevelProtocolStart)
     .filter((notice) => notice.event === "food eaten").length;
+  return currentFood;
 };
 
 const checkLevelComplete = () => {
@@ -285,7 +286,11 @@ const setFoodPosition = () => {
     [foodX, foodY] = getFreeCell(
       copySnake.concat(obstaclesF, obstaclesX, obstaclesY)
     );
-    setEvent("set food", foodX + ":" + foodY);
+    console.log(getCurrentFood());
+    setEvent(
+      "set food " + levels[level - 1].food[getCurrentFood()],
+      foodX + ":" + foodY
+    );
   }
 };
 
