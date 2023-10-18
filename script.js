@@ -36,10 +36,10 @@ const levels = [
   // },
 
   {
-    field: 10,
+    field: 20,
     time: 300000,
-    timeStep: 250,
-    food: 1,
+    timeStep: 150,
+    food: ["f", "m", "f", "f", "f", "f", "f", "f"],
     snakeLives: 10,
     obstacles: ["fix", "x", "y"],
     bonuses: [
@@ -164,7 +164,7 @@ const setLevel = () => {
   time = 0;
   protocol.push({ time: time, event: "start level", value: level });
   field = levels[level - 1].field;
-  foodLevel = levels[level - 1].food;
+  foodLevel = levels[level - 1].food.length;
   levelTime = levels[level - 1].time + extraTime;
   timeStep = levels[level - 1].timeStep;
   maxScores = levels[level - 1].maxScores;
