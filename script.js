@@ -41,7 +41,7 @@ const levels = [
     field: 20,
     time: 300000,
     timeStep: 150,
-    food: ["f", "m", "m", "m", "m", "m", "m", "m", "m"],
+    food: ["f", "m", "f", "f", "f", "f", "f", "m", "m"], // можно написать функицию которая будет в рандомном порядке распологать индексы с типом еды
     snakeLives: 10,
     obstacles: ["fix", "x", "y"],
     bonuses: [
