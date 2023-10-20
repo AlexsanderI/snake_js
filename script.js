@@ -66,8 +66,10 @@ let isLevelComplete = false;
 let screen = "";
 let foodX;
 let foodY;
-let foodStepX = randomNumber;
+let foodStepX;
 let foodStepY;
+let foodDirection = randomNumber;
+let isXStep = false;
 let snakeLives;
 let isMistake = false;
 const obstacles = [];
@@ -300,31 +302,38 @@ const setFoodPosition = () => {
   }
 };
 
-// console.log(Math.random() < 0.5 ? 1 : -1);
-// console.log(Math.random() < 0.5 ? 1 : -1);
-// // Определяем знак на основе случайного числа
-// let foodDirection = randomNumber;
-
 function moveFood() {
+  if (!isTime) {
+    return;
+  }
   const foodIndex = levels[level - 1].food[getCurrentFood()];
 
   if (foodIndex === "m") {
-    // const maxX = field; // Максимальное значение для координаты X (ваш размер поля)
-    const newX = foodX + foodStepX; // Двигаемся в соответствии с текущим направлением
-    const newY = foodY; // Координата Y остается неизменной
+    foodStepX = foodX + (isXStep ? foodDirection : 0);
+    foodStepY = foodY + (isXStep ? 0 : foodDirection);
 
+    console.log(foodStepY);
+
+    isXStep = !isXStep;
     // Проверяем, что новые координаты не находятся внутри препятствий
     if (
-      !isCollision(newX, newY, snakeBody, obstaclesF, obstaclesX, obstaclesY)
-    ) {
-      if (newX > field || newX < 1) {
-        // Если достигнуты границы поля, меняем направление
-        foodStepX *= -1;
-        // foodX = Math.max(1, Math.min(maxX, newX)); // Ограничиваем значение между 1 и maxX
+      !isCollision(
+        foodStepX,
+        foodStepY,
+        snakeBody,
+        obstaclesF,
+        obstaclesX,
+        obstaclesY
+      )
+    )
+      if (foodStepX > field || foodStepX < 1) {
+        foodDirection *= -1;
+      } else if (foodStepY > field || foodStepY < 1) {
+        foodDirection *= -1; // Переключаем направление также для Y, если достигнуты границы поля по Y
       } else {
-        foodX = newX; // В противном случае обновляем координату X еды
+        foodX = foodStepX;
+        foodY = foodStepY; // Обновляем обе координаты при каждом вызове
       }
-    }
   }
 }
 
