@@ -6,6 +6,8 @@ const levelElement = document.querySelector(".fa-stairs");
 const lifeElement = document.querySelector(".fa-heart");
 const controls = document.querySelectorAll(".controls i");
 
+let randomNumber = Math.random() < 0.5 ? 1 : -1;
+
 function millisecondsToMinutesAndSeconds(milliseconds) {
   var minutes = Math.floor(milliseconds / 60000);
   var seconds = ((milliseconds % 60000) / 1000).toFixed(0);
@@ -39,7 +41,7 @@ const levels = [
     field: 20,
     time: 300000,
     timeStep: 150,
-    food: ["f", "m", "f", "f", "f", "f", "f", "f"],
+    food: ["f", "m", "m", "m", "m", "m", "m", "m", "m"],
     snakeLives: 10,
     obstacles: ["fix", "x", "y"],
     bonuses: [
@@ -59,10 +61,13 @@ let level = 1;
 let field;
 let foodLevel;
 let currentFood;
+const foodPoints = 1;
 let isLevelComplete = false;
 let screen = "";
 let foodX;
 let foodY;
+let foodStepX = randomNumber;
+let foodStepY;
 let snakeLives;
 let isMistake = false;
 const obstacles = [];
@@ -82,7 +87,6 @@ let snakeY = 1;
 let snakeBody = [[snakeX, snakeY]];
 let setIntervalId;
 let score = 0;
-const foodPoints = 1;
 let maxScores;
 let levelTime;
 let extraTime = 0;
@@ -173,7 +177,9 @@ const setLevel = () => {
   obstaclesX = levels[level - 1].obstacles.filter(
     (obstacle) => obstacle === "x"
   );
+
   obstacleStepX = obstaclesX.map((obstacle) => 1);
+
   obstacleStopX = obstaclesX.map((obstacle) => "move");
   obstaclesY = levels[level - 1].obstacles.filter(
     (obstacle) => obstacle === "y"
@@ -286,13 +292,55 @@ const setFoodPosition = () => {
     [foodX, foodY] = getFreeCell(
       copySnake.concat(obstaclesF, obstaclesX, obstaclesY)
     );
-    console.log(getCurrentFood());
+
     setEvent(
       "set food " + levels[level - 1].food[getCurrentFood()],
       foodX + ":" + foodY
     );
   }
 };
+
+// console.log(Math.random() < 0.5 ? 1 : -1);
+// console.log(Math.random() < 0.5 ? 1 : -1);
+// // Определяем знак на основе случайного числа
+// let foodDirection = randomNumber;
+
+function moveFood() {
+  const foodIndex = levels[level - 1].food[getCurrentFood()];
+
+  if (foodIndex === "m") {
+    // const maxX = field; // Максимальное значение для координаты X (ваш размер поля)
+    const newX = foodX + foodStepX; // Двигаемся в соответствии с текущим направлением
+    const newY = foodY; // Координата Y остается неизменной
+
+    // Проверяем, что новые координаты не находятся внутри препятствий
+    if (
+      !isCollision(newX, newY, snakeBody, obstaclesF, obstaclesX, obstaclesY)
+    ) {
+      if (newX > field || newX < 1) {
+        // Если достигнуты границы поля, меняем направление
+        foodStepX *= -1;
+        // foodX = Math.max(1, Math.min(maxX, newX)); // Ограничиваем значение между 1 и maxX
+      } else {
+        foodX = newX; // В противном случае обновляем координату X еды
+      }
+    }
+  }
+}
+
+// Функция для проверки коллизии (проверки, находится ли объект внутри препятствий)
+const isCollision = (x, y, ...obstacles) => {
+  for (const obstacle of obstacles) {
+    for (const [obstacleX, obstacleY] of obstacle) {
+      if (x === obstacleX && y === obstacleY) {
+        return true; // Коллизия обнаружена
+      }
+    }
+  }
+  return false; // Нет коллизии
+};
+
+// Вызов функции moveFood()
 
 const setObstaclePosition = (type) => {
   /*
@@ -326,6 +374,7 @@ const setObstaclePosition = (type) => {
 
 const moveObstacle = (direction) => {
   const obstacles = direction === "x" ? obstaclesX.slice() : obstaclesY.slice();
+
   const obstacleStep =
     direction === "x" ? obstacleStepX.slice() : obstacleStepY.slice();
 
@@ -688,7 +737,8 @@ const protocolExecutor = () => {
         // перемещение препятствий
         [obstaclesX, obstacleStepX, obstacleStopX] = moveObstacle("x");
         [obstaclesY, obstacleStepY, obstacleStopY] = moveObstacle("y");
-
+        // перемещение еды
+        moveFood();
         // проверка всех предусмотренных игрой ограничений
         checkingRestrictions();
         counter();
