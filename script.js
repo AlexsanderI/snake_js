@@ -1,49 +1,89 @@
+/**
+ * @var playBoard: DOM-элемент "Игровое поле", принимает рендер игры
+ */
 const playBoard = document.querySelector(".play-board");
+/**
+ * @var scoreElement: DOM-элемент "Текущий счет", принимает набранные игроком очки
+ */
 const scoreElement = document.querySelector(".fa-wallet");
+/**
+ * @var leftToEatElement: DOM-элемент "Счетчик еды", принимает количество еды до конца уровня
+ */
 const leftToEatElement = document.querySelector(".fa-carrot");
+/**
+ * @var timeElement: DOM-элемент "Текущее время", принимает время, оставшееся до конца уровня
+ */
 const timeElement = document.querySelector(".fa-clock");
+/**
+ * @var levelElement: DOM-элемент "Текущий уровень", принимает уровень, на котором находится игрок
+ */
 const levelElement = document.querySelector(".fa-stairs");
+/**
+ * @var lifeElement: DOM-элемент "Остаток жизней", принимает доступное игроку количество ошибок
+ */
 const lifeElement = document.querySelector(".fa-heart");
+/**
+ * @var controls: DOM-элементы "Интерактивные стрелки", принимают кнопки сенсорного управления змейкой
+ */
 const controls = document.querySelectorAll(".controls i");
-
-function millisecondsToMinutesAndSeconds(milliseconds) {
-  var minutes = Math.floor(milliseconds / 60000);
-  var seconds = ((milliseconds % 60000) / 1000).toFixed(0);
-  return minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
-}
-
-function findLastEventIndex(protocol, eventName, eventValue) {
-  let lastIndex = -1;
-  for (let i = protocol.length - 1; i >= 0; i--) {
-    if (protocol[i].event === eventName && protocol[i].value === eventValue) {
-      lastIndex = i;
-      break;
-    }
-  }
-  return lastIndex;
-}
-
+/**
+ * @var {Array of Objects} levels: параметры уровней. Номер уровня = index объекта в массиве + 1.
+ */
 const levels = [
-  // {
-  //   field: 3,
-  //   time: 15000,
-  //   timeStep: 250,
-  //   food: 2,
-  //   snakeLives: 2,
-  //   obstacles: ["fix", "fix", "fix"],
-  //   bonuses: [{ type: "breakWall", value: "", startFood: 0 }],
-  //   maxScores: 2,
-  // },
-
   {
-    field: 10,
+    /**
+     * @property {number} field: количество ячеек по стороне квадратного игрового поля
+     */
+    field: 15,
+    /**
+     *  @property {number} time: продолжительность уровня в миллисекундах.
+     */
     time: 300000,
+    /**
+     * @property {number} timeStep: интервал рендера игрового поля в миллисекундах.
+     */
     timeStep: 250,
+    /**
+     * @property {number} food: количество кусков еды, которое игрок должен съесть на уровне.
+     */
     food: 1,
+    /**
+     * @property {number} snakeLives: количество жизней (ошибок, которые игрок может допустить на уровне)
+     */
     snakeLives: 10,
+    /**
+     * @var {Array of Strings} obstacles: ключевые слова, управляющие подвижностью препятствий:
+     * @string fix - неподвижное
+     * @string x - движущееся по оси x
+     * @string y - движущееся по оси y
+     */
     obstacles: ["fix", "x", "y"],
+    /**
+     * @var {Array of objects} bonuses: параметры бонусов
+     */
     bonuses: [
-      { type: "breakWall", value: "", startFood: 0 },
+      {
+        /**
+         * @property {String} type: ключевые слова, описывающие бонусы, которые получает игрок
+         * @string breakWall - игрок может выходить за пределы поля и входить в него с другой стороны
+         * @string foodFreeze - еда не увеличивает длину змейки
+         * @string break - змейка может разбивать препятствия при соприкосновении с ними
+         * @string time - игрок получает дополнительное время
+         * @string points - игрок получает дополнительные очки
+         * @string lives - игрок получает дополнительные жизни
+         */
+        type: "breakWall",
+        /**
+         * @property {number | string} value: числовые значения для дополнительных времени, очков и жизней, в остальных случаях пустая строка
+         */
+        value: "",
+        /**
+         * @property {number} startFood: порядковый номер еды, вместе с которой появляется бонус.
+         * @description Бонус доступен до появления еды с номером startFood + 2.
+         * @description После получения бонусов "breakWall", "foodFreeze" и "break", они действуют до увеличения порядкового номера еды на 2
+         */
+        startFood: 0,
+      },
       { type: "foodFreeze", value: "", startFood: 4 },
       // { type: "break", value: "", startFood: 1 }, // value порядковый номер type: "break"
       // { type: "time", value: 20000, startFood: 4 },
@@ -51,14 +91,38 @@ const levels = [
       // { type: "points", value: 10, startFood: 4 },
       { type: "lives", value: 20, startFood: 4 },
     ],
+    /**
+     * @var {number} maxLevel: максимальное количество очков, которое можно набрать на уровне
+     * @description вычисляется при создании уровня и используется для мотивации игрока улучшать навыки игры
+     */
     maxScores: 39,
   },
 ];
+/**
+ * @var {number} maxLevel: количество уровней игры
+ */
 const maxLevel = levels.length;
+/**
+ * @var {number} level: текущий уровень, на котором находится игрок
+ */
 let level = 1;
+/**
+ * @var {number} field: размер текущего поля
+ * @description количество ячеек по каждой стороне квадратного игрового поля, назначается параметром field текущего объекта из массива levels
+ */
 let field;
+/**
+ * @var {number} foodLevel: количество еды, которое змейка должна съесть на текущем уровне
+ * @description назначается параметром food текущего объекта из массива levels
+ */
 let foodLevel;
+/**
+ * @var {number} currentFood: порядковый номер отображаемой еды на текущем уровне
+ */
 let currentFood;
+/**
+ * @var {boolean} isLevelComplete
+ */
 let isLevelComplete = false;
 let screen = "";
 let foodX;
@@ -104,6 +168,33 @@ let isObstaclesBroken = false;
 let brokenObstacle = {};
 let isFoodEatRise = true;
 let isBreakWallActive = false;
+/**
+ * Вспомогательная функция для рендера. Конвертирует формат времени из "миллисекунды" в "минуты : секунды".
+ * @param {number} milliseconds Время в миллисекундах
+ * @description
+ *  1) вычисляется количество полных минут в переданном функции параметре milliseconds - const minutes;
+ *  2) вычисляет количество полных секунд в оставшемся после вычета полных минут параметре milliseconds - const seconds;
+ *  3) игнорирует оствшиеся после вычета полных минут и полных секунд в параметре milliseconds миллисекунды - const seconds;
+ *  4) для секунд меньше 10 добавляет ноль для сохранения формата возвращаемой функцией строки - const timeFormat;
+ * @returns {string} Время в формате "минуты : секунды"
+ */
+function millisecondsToMinutesAndSeconds(milliseconds) {
+  const minutes = Math.floor(milliseconds / 60000);
+  const seconds = ((milliseconds % 60000) / 1000).toFixed(0);
+  const timeFormat = minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
+  return timeFormat;
+}
+
+function findLastEventIndex(protocol, eventName, eventValue) {
+  let lastIndex = -1;
+  for (let i = protocol.length - 1; i >= 0; i--) {
+    if (protocol[i].event === eventName && protocol[i].value === eventValue) {
+      lastIndex = i;
+      break;
+    }
+  }
+  return lastIndex;
+}
 
 const getCurrentFood = () => {
   const currentLevelProtocolStart = protocol.findIndex(
@@ -440,17 +531,15 @@ const render = () => {
     screen += `<div class="bonus-${
       levels[level - 1].bonuses[currentBonus].type
     }" style="grid-area: ${bonusY} / ${bonusX}"></div>`;
-  // после  игрового поля создается табло
-  scoreElement.innerHTML = ` ${score}`; // текущие очки
-  leftToEatElement.innerHTML = ` ${leftToEat}`; // максимально возможный результат
-  // остаток времени до окончания уровня
+  playBoard.innerHTML = screen; //!isLevelComplete ? screen : "";
+  scoreElement.innerHTML = ` ${score}`;
+  leftToEatElement.innerHTML = ` ${leftToEat}`;
   timeElement.innerHTML = ` ${millisecondsToMinutesAndSeconds(
     levelTime - time < 0 ? 0 : levelTime - time
   )}`;
-  levelElement.innerHTML = ` ${level}`; // текущий уровень
+  levelElement.innerHTML = ` ${level}`;
   lifeElement.innerHTML = ` ${snakeLives < 0 ? 0 : snakeLives}`;
-  // вывод созданного изображения на экран
-  playBoard.innerHTML = !isLevelComplete ? screen : "";
+
   isRender = true;
 };
 /*
@@ -683,7 +772,6 @@ const protocolExecutor = () => {
         // перемещение препятствий
         [obstaclesX, obstacleStepX, obstacleStopX] = moveObstacle("x");
         [obstaclesY, obstacleStepY, obstacleStopY] = moveObstacle("y");
-
         // проверка всех предусмотренных игрой ограничений
         checkingRestrictions();
         counter();
@@ -698,7 +786,7 @@ const protocolExecutor = () => {
     case "level is complete":
       level++;
       isTime = false;
-      if (level > levels.length) {
+      if (level > maxLevel) {
         clearInterval(setIntervalId);
         alert("You WIN! Press OK to replay...");
         localStorage.setItem("protocol", JSON.stringify(protocol));
