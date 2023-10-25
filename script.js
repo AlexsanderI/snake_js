@@ -41,7 +41,7 @@ const levels = [
     field: 20,
     time: 300000,
     timeStep: 150,
-    food: ["f", "m", "f", "f", "f", "f", "f", "m", "m"], // можно написать функицию которая будет в рандомном порядке распологать индексы с типом еды
+    food: ["m", "f", "f", "m", "m", "m", "m", "m", "m"], // можно написать функицию которая будет в рандомном порядке распологать индексы с типом еды
     snakeLives: 10,
     obstacles: ["fix", "x", "y"],
     bonuses: [
@@ -66,9 +66,10 @@ let isLevelComplete = false;
 let screen = "";
 let foodX;
 let foodY;
-let foodStepX;
-let foodStepY;
-let foodDirection = randomNumber;
+let foodStepX = Math.random() < 0.5 ? 1 : -1;
+let foodStepY = Math.random() < 0.5 ? 1 : -1;
+let foodSpeed = 0;
+let foodIndex;
 let isXStep = false;
 let snakeLives;
 let isMistake = false;
@@ -172,6 +173,7 @@ const setLevel = () => {
   protocol.push({ time: time, event: "start level", value: level });
   field = levels[level - 1].field;
   foodLevel = levels[level - 1].food.length;
+
   levelTime = levels[level - 1].time + extraTime;
   timeStep = levels[level - 1].timeStep;
   maxScores = levels[level - 1].maxScores;
@@ -306,35 +308,37 @@ function moveFood() {
   if (!isTime) {
     return;
   }
-  const foodIndex = levels[level - 1].food[getCurrentFood()];
+
+  foodIndex = levels[level - 1].food[getCurrentFood()];
 
   if (foodIndex === "m") {
-    foodStepX = foodX + (isXStep ? foodDirection : 0);
-    foodStepY = foodY + (isXStep ? 0 : foodDirection);
+    foodSpeed += timeStep;
+    if (foodSpeed / timeStep === 1) {
+      // foodStepX = foodX + (isXStep ? foodDirection : 0);
+      // foodStepY = foodY + (isXStep ? 0 : foodDirection);
 
-    console.log(foodStepY);
+      foodX += foodStepX;
+      foodY += foodStepY;
 
-    isXStep = !isXStep;
-    // Проверяем, что новые координаты не находятся внутри препятствий
-    if (
-      !isCollision(
-        foodStepX,
-        foodStepY,
-        snakeBody,
-        obstaclesF,
-        obstaclesX,
-        obstaclesY
+      isXStep = !isXStep;
+      // Проверяем, что новые координаты не находятся внутри препятствий
+      if (
+        !isCollision(
+          foodX,
+          foodY,
+          snakeBody,
+          obstaclesF,
+          obstaclesX,
+          obstaclesY
+        )
       )
-    )
-      if (foodStepX > field || foodStepX < 1) {
-        foodDirection *= -1;
-      } else if (foodStepY > field || foodStepY < 1) {
-        foodDirection *= -1; // Переключаем направление также для Y, если достигнуты границы поля по Y
-      } else {
-        foodX = foodStepX;
-        foodY = foodStepY; // Обновляем обе координаты при каждом вызове
-      }
+        if (foodX >= field || foodX <= 1) foodStepX *= -1;
+      if (foodY >= field || foodY <= 1) foodStepY *= -1; // Переключаем направление также для Y, если достигнуты границы поля по Y
+
+      foodSpeed = 0;
+    }
   }
+  console.log(foodX, foodY);
 }
 
 // Функция для проверки коллизии (проверки, находится ли объект внутри препятствий)
