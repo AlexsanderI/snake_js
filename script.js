@@ -121,20 +121,46 @@ let foodLevel;
  */
 let currentFood;
 /**
- * @var {boolean} isLevelComplete
+ * @var {boolean} isLevelComplete: фиксирует момент, когда съедена последняя еда на текущем уровне
  */
 let isLevelComplete = false;
+/**
+ * @var {string} screen: образ игрового поля, который формируется и рендерится на каждом шаге игры
+ */
 let screen = "";
+/**
+ * @var {number} foodX: координата текущей еды по горизонтали, измеряемая в количестве ячеек от левого края поля
+ */
 let foodX;
+/**
+ * @var {number} foodY: координата текущей еды по вертикали, измеряемая в количестве ячеек от верхнего края поля
+ */
 let foodY;
+/**
+ * @var {number} snakeLives: количество жизней (доступное игроку количество ошибок) на текущем уровне
+ */
 let snakeLives;
+/**
+ * @var {boolean} isMistake: фиксируется ошибка игрока на текущем уровне
+ */
 let isMistake = false;
-const obstacles = [];
-let obstacleX;
-let obstacleY;
+let obstacleX; // подлежит удалению с заменой на соответствующий массив
+let obstacleY; // подлежит удалению с заменой на соответствующий массив
+/**
+ * @var {number} bonusX: координата текущего бонуса по горизонтали, измеряемая в количестве ячеек от левого края поля
+ */
 let bonusX;
+/**
+ * @var {number} bonusY: координата текущего бонуса по вертикали, измеряемая в количестве ячеек от верхнего края поля
+ */
 let bonusY;
+/**
+ * @var {boolean} isBonus: фиксирует моменты начала(true) и конца(false) доступности бонуса игроку
+ */
 let isBonus = false;
+/**
+ * @var {boolean} isBonusEaten: фиксирует момент начала действия бонуса при его поедании змейкой
+ */
 let isBonusEaten = false;
 let isBonusShow = false;
 let currentBonus;
@@ -184,7 +210,16 @@ function millisecondsToMinutesAndSeconds(milliseconds) {
   const timeFormat = minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
   return timeFormat;
 }
-
+/**
+ *
+ * @param {*} protocol
+ * @param {*} eventName
+ * @param {*} eventValue
+ * @description
+ *  1)
+ *  2)
+ * @returns lastIndex: .......
+ */
 function findLastEventIndex(protocol, eventName, eventValue) {
   let lastIndex = -1;
   for (let i = protocol.length - 1; i >= 0; i--) {
