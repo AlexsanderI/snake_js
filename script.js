@@ -1,51 +1,89 @@
+/**
+ * @var playBoard: DOM-элемент "Игровое поле", принимает рендер игры
+ */
 const playBoard = document.querySelector(".play-board");
+/**
+ * @var scoreElement: DOM-элемент "Текущий счет", принимает набранные игроком очки
+ */
 const scoreElement = document.querySelector(".fa-wallet");
+/**
+ * @var leftToEatElement: DOM-элемент "Счетчик еды", принимает количество еды до конца уровня
+ */
 const leftToEatElement = document.querySelector(".fa-carrot");
+/**
+ * @var timeElement: DOM-элемент "Текущее время", принимает время, оставшееся до конца уровня
+ */
 const timeElement = document.querySelector(".fa-clock");
+/**
+ * @var levelElement: DOM-элемент "Текущий уровень", принимает уровень, на котором находится игрок
+ */
 const levelElement = document.querySelector(".fa-stairs");
+/**
+ * @var lifeElement: DOM-элемент "Остаток жизней", принимает доступное игроку количество ошибок
+ */
 const lifeElement = document.querySelector(".fa-heart");
+/**
+ * @var controls: DOM-элементы "Интерактивные стрелки", принимают кнопки сенсорного управления змейкой
+ */
 const controls = document.querySelectorAll(".controls i");
-
-let randomNumber = Math.random() < 0.5 ? 1 : -1;
-
-function millisecondsToMinutesAndSeconds(milliseconds) {
-  var minutes = Math.floor(milliseconds / 60000);
-  var seconds = ((milliseconds % 60000) / 1000).toFixed(0);
-  return minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
-}
-
-function findLastEventIndex(protocol, eventName, eventValue) {
-  let lastIndex = -1;
-  for (let i = protocol.length - 1; i >= 0; i--) {
-    if (protocol[i].event === eventName && protocol[i].value === eventValue) {
-      lastIndex = i;
-      break;
-    }
-  }
-  return lastIndex;
-}
-
+/**
+ * @var {Array of Objects} levels: параметры уровней. Номер уровня = index объекта в массиве + 1.
+ */
 const levels = [
-  // {
-  //   field: 3,
-  //   time: 15000,
-  //   timeStep: 250,
-  //   food: 2,
-  //   snakeLives: 2,
-  //   obstacles: ["fix", "fix", "fix"],
-  //   bonuses: [{ type: "breakWall", value: "", startFood: 0 }],
-  //   maxScores: 2,
-  // },
-
   {
-    field: 20,
+    /**
+     * @property {number} field: количество ячеек по стороне квадратного игрового поля
+     */
+    field: 15,
+    /**
+     *  @property {number} time: продолжительность уровня в миллисекундах.
+     */
     time: 300000,
-    timeStep: 150,
-    food: ["m", "f", "f", "m", "m", "m", "m", "m", "m"], // можно написать функицию которая будет в рандомном порядке распологать индексы с типом еды
+    /**
+     * @property {number} timeStep: интервал рендера игрового поля в миллисекундах.
+     */
+    timeStep: 250,
+    /**
+     * @property {number} food: количество кусков еды, которое игрок должен съесть на уровне.
+     */
+    food: 10,
+    /**
+     * @property {number} snakeLives: количество жизней (ошибок, которые игрок может допустить на уровне)
+     */
     snakeLives: 10,
-    obstacles: ["fix", "x", "y"],
+    /**
+     * @var {Array of Strings} obstacles: ключевые слова, управляющие подвижностью препятствий:
+     * @string fix - неподвижное
+     * @string x - движущееся по оси x
+     * @string y - движущееся по оси y
+     */
+    obstacles: ["y", "y", "fix", "x"],
+    /**
+     * @var {Array of objects} bonuses: параметры бонусов
+     */
     bonuses: [
-      { type: "breakWall", value: "", startFood: 0 },
+      {
+        /**
+         * @property {String} type: ключевые слова, описывающие бонусы, которые получает игрок
+         * @string breakWall - игрок может выходить за пределы поля и входить в него с другой стороны
+         * @string foodFreeze - еда не увеличивает длину змейки
+         * @string break - змейка может разбивать препятствия при соприкосновении с ними
+         * @string time - игрок получает дополнительное время
+         * @string points - игрок получает дополнительные очки
+         * @string lives - игрок получает дополнительные жизни
+         */
+        type: "breakWall",
+        /**
+         * @property {number | string} value: числовые значения для дополнительных времени, очков и жизней, в остальных случаях пустая строка
+         */
+        value: "",
+        /**
+         * @property {number} startFood: порядковый номер еды, вместе с которой появляется бонус.
+         * @description Бонус доступен до появления еды с номером startFood + 2.
+         * @description После получения бонусов "breakWall", "foodFreeze" и "break", они действуют до увеличения порядкового номера еды на 2
+         */
+        startFood: 0,
+      },
       { type: "foodFreeze", value: "", startFood: 4 },
       // { type: "break", value: "", startFood: 1 }, // value порядковый номер type: "break"
       // { type: "time", value: 20000, startFood: 4 },
@@ -53,24 +91,42 @@ const levels = [
       // { type: "points", value: 10, startFood: 4 },
       { type: "lives", value: 20, startFood: 4 },
     ],
+    /**
+     * @var {number} maxLevel: максимальное количество очков, которое можно набрать на уровне
+     * @description вычисляется при создании уровня и используется для мотивации игрока улучшать навыки игры
+     */
     maxScores: 39,
   },
 ];
+/**
+ * @var {number} maxLevel: количество уровней игры
+ */
 const maxLevel = levels.length;
+/**
+ * @var {number} level: текущий уровень, на котором находится игрок
+ */
 let level = 1;
+/**
+ * @var {number} field: размер текущего поля
+ * @description количество ячеек по каждой стороне квадратного игрового поля, назначается параметром field текущего объекта из массива levels
+ */
 let field;
+/**
+ * @var {number} foodLevel: количество еды, которое змейка должна съесть на текущем уровне
+ * @description назначается параметром food текущего объекта из массива levels
+ */
 let foodLevel;
+/**
+ * @var {number} currentFood: порядковый номер отображаемой еды на текущем уровне
+ */
 let currentFood;
-const foodPoints = 1;
+/**
+ * @var {boolean} isLevelComplete
+ */
 let isLevelComplete = false;
 let screen = "";
 let foodX;
 let foodY;
-let foodStepX = Math.random() < 0.5 ? 1 : -1;
-let foodStepY = Math.random() < 0.5 ? 1 : -1;
-let foodSpeed = 0;
-let foodIndex;
-let isXStep = false;
 let snakeLives;
 let isMistake = false;
 const obstacles = [];
@@ -90,6 +146,7 @@ let snakeY = 1;
 let snakeBody = [[snakeX, snakeY]];
 let setIntervalId;
 let score = 0;
+const foodPoints = 1;
 let maxScores;
 let levelTime;
 let extraTime = 0;
@@ -111,6 +168,33 @@ let isObstaclesBroken = false;
 let brokenObstacle = {};
 let isFoodEatRise = true;
 let isBreakWallActive = false;
+/**
+ * Вспомогательная функция для рендера. Конвертирует формат времени из "миллисекунды" в "минуты : секунды".
+ * @param {number} milliseconds Время в миллисекундах
+ *   @description
+ *  1) вычисляется количество полных минут в переданном функции параметре milliseconds - const minutes;
+ *  2) вычисляет количество полных секунд в оставшемся после вычета полных минут параметре milliseconds - const seconds;
+ *  3) игнорирует оствшиеся после вычета полных минут и полных секунд в параметре milliseconds миллисекунды - const seconds;
+ *  4) для секунд меньше 10 добавляет ноль для сохранения формата возвращаемой функцией строки - const timeFormat;
+ * @returns {string} Время в формате "минуты : секунды"
+ */
+function millisecondsToMinutesAndSeconds(milliseconds) {
+  const minutes = Math.floor(milliseconds / 60000);
+  const seconds = ((milliseconds % 60000) / 1000).toFixed(0);
+  const timeFormat = minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
+  return timeFormat;
+}
+
+function findLastEventIndex(protocol, eventName, eventValue) {
+  let lastIndex = -1;
+  for (let i = protocol.length - 1; i >= 0; i--) {
+    if (protocol[i].event === eventName && protocol[i].value === eventValue) {
+      lastIndex = i;
+      break;
+    }
+  }
+  return lastIndex;
+}
 
 const getCurrentFood = () => {
   const currentLevelProtocolStart = protocol.findIndex(
@@ -119,7 +203,6 @@ const getCurrentFood = () => {
   currentFood = protocol
     .slice(currentLevelProtocolStart)
     .filter((notice) => notice.event === "food eaten").length;
-  return currentFood;
 };
 
 const checkLevelComplete = () => {
@@ -172,8 +255,7 @@ const setLevel = () => {
   time = 0;
   protocol.push({ time: time, event: "start level", value: level });
   field = levels[level - 1].field;
-  foodLevel = levels[level - 1].food.length;
-
+  foodLevel = levels[level - 1].food;
   levelTime = levels[level - 1].time + extraTime;
   timeStep = levels[level - 1].timeStep;
   maxScores = levels[level - 1].maxScores;
@@ -181,9 +263,7 @@ const setLevel = () => {
   obstaclesX = levels[level - 1].obstacles.filter(
     (obstacle) => obstacle === "x"
   );
-
   obstacleStepX = obstaclesX.map((obstacle) => 1);
-
   obstacleStopX = obstaclesX.map((obstacle) => "move");
   obstaclesY = levels[level - 1].obstacles.filter(
     (obstacle) => obstacle === "y"
@@ -287,6 +367,18 @@ const counter = () => {
   }
 };
 
+/**
+ * Функция отвечает за установку новой позиции еды в игре на свободных ячейках поля от любых объектов
+ * @param { } функция не принимает никаких параметров
+ *
+ * @description
+ * 1) Проверяем необходимость генерации еды
+ * 2) Генерируем новые коорденаты еды на свободных ячейкач поля от любых объектов
+ * 3) Передаем в протокол события генерации еды с ее координатами
+ *
+ * @returns Функция не возвращает какое-либо значение (undefined)
+ */
+
 const setFoodPosition = () => {
   /*
   Алгоритм генерации координат еды с учетом движущихся препятствий:
@@ -296,64 +388,10 @@ const setFoodPosition = () => {
     [foodX, foodY] = getFreeCell(
       copySnake.concat(obstaclesF, obstaclesX, obstaclesY)
     );
-
-    setEvent(
-      "set food " + levels[level - 1].food[getCurrentFood()],
-      foodX + ":" + foodY
-    );
+    setEvent("set food", foodX + ":" + foodY);
   }
+  console.log(copySnake);
 };
-
-function moveFood() {
-  if (!isTime) {
-    return;
-  }
-
-  foodIndex = levels[level - 1].food[getCurrentFood()];
-
-  if (foodIndex === "m") {
-    foodSpeed += timeStep;
-    if (foodSpeed / timeStep === 1) {
-      // foodStepX = foodX + (isXStep ? foodDirection : 0);
-      // foodStepY = foodY + (isXStep ? 0 : foodDirection);
-
-      foodX += foodStepX;
-      foodY += foodStepY;
-
-      isXStep = !isXStep;
-      // Проверяем, что новые координаты не находятся внутри препятствий
-      if (
-        !isCollision(
-          foodX,
-          foodY,
-          snakeBody,
-          obstaclesF,
-          obstaclesX,
-          obstaclesY
-        )
-      )
-        if (foodX >= field || foodX <= 1) foodStepX *= -1;
-      if (foodY >= field || foodY <= 1) foodStepY *= -1; // Переключаем направление также для Y, если достигнуты границы поля по Y
-
-      foodSpeed = 0;
-    }
-  }
-  console.log(foodX, foodY);
-}
-
-// Функция для проверки коллизии (проверки, находится ли объект внутри препятствий)
-const isCollision = (x, y, ...obstacles) => {
-  for (const obstacle of obstacles) {
-    for (const [obstacleX, obstacleY] of obstacle) {
-      if (x === obstacleX && y === obstacleY) {
-        return true; // Коллизия обнаружена
-      }
-    }
-  }
-  return false; // Нет коллизии
-};
-
-// Вызов функции moveFood()
 
 const setObstaclePosition = (type) => {
   /*
@@ -381,13 +419,37 @@ const setObstaclePosition = (type) => {
     booking.push([obstacleX, obstacleY]);
     return [obstacleX, obstacleY];
   });
-
   return obstaclesDirection;
 };
 
+/**
+ * Функция заставляет двигаться препятствия по оси Х или У в зависимости от параметров diraction, при достижении границы поля или попадающего бонуса на пути движения препятствия - препятствие меняет свое направление на противоположное (отбивается)
+ * @param {string} direction : направление движения препятствия - 'x' по горозонтали, 'y' - по вертикали
+ *
+ *  @description
+ *  a. выбрать препятствия соотвествующие парметраметру diraction
+ * b. задаем скорость движения припятсятвию
+ * c. проверяем идет ли игра чтобы двигать припятствия во время игры
+ * d. проверяем дижущиесия припятствия на сооударения с границей поля, бонусами, самим препятствием и с едой.
+ * d.1. проверяем на соприкосновение с любым объектом
+ * d.2. меняем шаг на обратный при соприкосновения
+ * c. происходит обновление координаты одного из препятствий если оно равно "move"
+ * 1) Сначала функция создает копии массивов obstacles, obstacleStep и obstacleStop в зависимости от значения direction ("x" или "y").
+ *  - это делается для того чтобы функция могла задавать движение препятствиям заданым пораметром diraction
+ * 3) Затем увеличивается значение переменной obstacleSpeed на timeStep. Этим самым мы можем менять скорость двежения припатствия
+ * 4) Происходит проверка: если obstacleSpeed деленное на timeStep равно 5, то выполняется следующий блок кода. Эта проверка, выполняется для определения определенного временного интервала.
+ * 5) Выполняем проверку, если isTime истинно, то функция выполняет набор действий для каждого элемента массива obstacles
+ * - делается для того что бы двежение припятствий останавливалось вместе с isTime
+ * 6) Внутри цикла for, который перебирает элементы в массиве obstacles, происходит ряд проверок и присваиваний
+ * - сщздали переменные fieldMinContact и fieldMaxContact которые обозначают границы поля
+ * - fieldMinContact и fieldMaxContact зависят от сравнения координат препятствия с координатами поля и начинают движение в обратном направлении.
+ * - bonusContact зависит от близости координат препятствия к координатам бонуса и начинают движение в обратном направлении.
+ * - fixObstacleContact проверяет близость координат препятствия к координатам фиксированым припятсвием и начинают движение в обратном направлении.
+ * @returns  функция возвращает массив, содержащий три массива: obstacles, obstacleStep, и obstacleStop, которые были созданы в ходе выполнения функции и влияют на характер движения препятствий.
+ */
+
 const moveObstacle = (direction) => {
   const obstacles = direction === "x" ? obstaclesX.slice() : obstaclesY.slice();
-
   const obstacleStep =
     direction === "x" ? obstacleStepX.slice() : obstacleStepY.slice();
 
@@ -415,6 +477,7 @@ const moveObstacle = (direction) => {
         );
 
         if (fieldMaxContact) obstacleStep[i] = -1;
+
         if (fieldMinContact) obstacleStep[i] = 1;
         if (bonusContact && !isBonusEaten && isBonusShow)
           obstacleStep[i] = obstacleStep[i] * -1;
@@ -426,7 +489,7 @@ const moveObstacle = (direction) => {
     obstacleSpeed = 0;
   }
   obstacleStop = obstacleStop.map((obstacle) => "move");
-
+  console.log([obstacles, obstacleStep, obstacleStop]);
   return [obstacles, obstacleStep, obstacleStop];
 };
 
@@ -507,17 +570,15 @@ const render = () => {
     screen += `<div class="bonus-${
       levels[level - 1].bonuses[currentBonus].type
     }" style="grid-area: ${bonusY} / ${bonusX}"></div>`;
-  // после  игрового поля создается табло
-  scoreElement.innerHTML = ` ${score}`; // текущие очки
-  leftToEatElement.innerHTML = ` ${leftToEat}`; // максимально возможный результат
-  // остаток времени до окончания уровня
+  playBoard.innerHTML = screen; //!isLevelComplete ? screen : "";
+  scoreElement.innerHTML = ` ${score}`;
+  leftToEatElement.innerHTML = ` ${leftToEat}`;
   timeElement.innerHTML = ` ${millisecondsToMinutesAndSeconds(
     levelTime - time < 0 ? 0 : levelTime - time
   )}`;
-  levelElement.innerHTML = ` ${level}`; // текущий уровень
+  levelElement.innerHTML = ` ${level}`;
   lifeElement.innerHTML = ` ${snakeLives < 0 ? 0 : snakeLives}`;
-  // вывод созданного изображения на экран
-  playBoard.innerHTML = !isLevelComplete ? screen : "";
+
   isRender = true;
 };
 /*
@@ -750,8 +811,6 @@ const protocolExecutor = () => {
         // перемещение препятствий
         [obstaclesX, obstacleStepX, obstacleStopX] = moveObstacle("x");
         [obstaclesY, obstacleStepY, obstacleStopY] = moveObstacle("y");
-        // перемещение еды
-        moveFood();
         // проверка всех предусмотренных игрой ограничений
         checkingRestrictions();
         counter();
@@ -766,7 +825,7 @@ const protocolExecutor = () => {
     case "level is complete":
       level++;
       isTime = false;
-      if (level > levels.length) {
+      if (level > maxLevel) {
         clearInterval(setIntervalId);
         alert("You WIN! Press OK to replay...");
         localStorage.setItem("protocol", JSON.stringify(protocol));
